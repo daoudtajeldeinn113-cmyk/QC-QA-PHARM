@@ -33,3 +33,118 @@
     </div>
 </body>
 </html>
+<div class="card" style="margin-top: 20px;">
+    <h2>مستندات إضافية</h2>
+    <ul>
+        <li><a href="data.xlsx">تحميل ملف نتائج المختبر (Excel)</a></li>
+        <li><a href="SOP-001.pdf">عرض دليل إجراءات التشغيل (SOP)</a></li>
+    </ul>
+</div>
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام QC-QA Pharma | د. داود تاج الدين</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2 { color: #2c3e50; border-bottom: 2px solid #27ae60; padding-bottom: 10px; }
+        
+        /* تصميم النموذج */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        
+        .btn { background-color: #27ae60; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; transition: 0.3s; }
+        .btn:hover { background-color: #219150; }
+
+        /* تصميم الجدول */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: center; }
+        th { background-color: #2c3e50; color: white; }
+        .status-pass { color: #27ae60; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h1>نظام إدارة الجودة الصيدلانية 💊</h1>
+        <p>إعداد وتطوير: <strong>د. داود تاج الدين أحمد</strong></p>
+    </div>
+
+    <div class="card">
+        <h2>إدخال بيانات فحص عينة جديدة</h2>
+        <div class="form-group">
+            <label>اسم المستحضر (Product Name):</label>
+            <input type="text" id="prodName" placeholder="مثلاً: Paracetamol 500mg">
+        </div>
+        <div class="form-group">
+            <label>رقم التشغيلة (Batch No.):</label>
+            <input type="text" id="batchNo" placeholder="مثلاً: BN12345">
+        </div>
+        <div class="form-group">
+            <label>نوع التحليل (Test):</label>
+            <select id="testType">
+                <option value="Assay">Assay</option>
+                <option value="Dissolution">Dissolution</option>
+                <option value="Impurity">Impurity</option>
+                <option value="pH">pH Value</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>النتيجة (Result %):</label>
+            <input type="number" id="result" placeholder="99.5">
+        </div>
+        <button class="btn" onclick="addRecord()">حفظ النتيجة في الجدول</button>
+    </div>
+
+    <div class="card">
+        <h2>سجل نتائج المختبر المستلمة</h2>
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>المستحضر</th>
+                    <th>رقم التشغيلة</th>
+                    <th>الاختبار</th>
+                    <th>النتيجة</th>
+                    <th>الحالة</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function addRecord() {
+        const name = document.getElementById('prodName').value;
+        const batch = document.getElementById('batchNo').value;
+        const test = document.getElementById('testType').value;
+        const result = document.getElementById('result').value;
+        
+        if(!name || !batch || !result) { alert("يرجى ملء كافة الخانات"); return; }
+
+        const table = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
+        const newRow = table.insertRow();
+
+        newRow.innerHTML = `
+            <td>${name}</td>
+            <td>${batch}</td>
+            <td>${test}</td>
+            <td>${result}%</td>
+            <td class="status-pass">مطابق (Passed)</td>
+        `;
+
+        // تفريغ الخانات بعد الحفظ
+        document.getElementById('prodName').value = '';
+        document.getElementById('batchNo').value = '';
+        document.getElementById('result').value = '';
+    }
+</script>
+
+</body>
+</html>

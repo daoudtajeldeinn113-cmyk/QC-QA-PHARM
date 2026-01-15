@@ -1,551 +1,176 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pharma LIMS Pro v8.0 | Dr. Daoud</title>
+    <title>Pharma LIMS v10.1 | Official COA System</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --primary: #1e293b; --accent: #0284c7; --bg: #f8fafc; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; }
-        aside { width: 280px; background: var(--primary); color: white; height: 100vh; padding: 20px; position: fixed; }
-        main { margin-right: 280px; flex: 1; padding: 30px; }
-        .card { background: var(--white); border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; margin-bottom: 20px; }
-        .section-title { font-size: 18px; font-weight: bold; color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .field { display: flex; flex-direction: column; }
-        label { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 5px; }
-        input, select, textarea { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
-        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button { padding: 12px 20px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-save { background: var(--accent); color: white; flex: 2; }
-        .btn-print { background: #64748b; color: white; flex: 1; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
-        th { background: #f1f5f9; padding: 12px; text-align: right; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        .coa-print-area { display: none; }
+        :root { --primary: #1e293b; --accent: #0284c7; --border: #cbd5e1; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f1f5f9; display: flex; }
+        aside { width: 300px; background: var(--primary); color: white; height: 100vh; padding: 20px; position: fixed; }
+        main { margin-left: 300px; padding: 30px; flex: 1; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+        label { font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; }
+        input, select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; }
+        
+        /* Print Header Style */
+        #coa-print { display: none; width: 210mm; background: white; padding: 30px; margin: auto; color: black; border: 2px solid #000; }
+        .coa-header { display: flex; justify-content: space-between; border-bottom: 3px solid #000; padding-bottom: 10px; }
+        .coa-title { text-align: center; font-weight: bold; font-size: 20px; margin: 15px 0; border: 1px solid #000; padding: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        table, th, td { border: 1px solid black; padding: 6px; text-align: left; }
+        .footer { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-size: 11px; }
+
         @media print {
-            body * { visibility: hidden; }
-            .coa-print-area, .coa-print-area * { visibility: visible; }
-            .coa-print-area { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 40px; }
+            aside, main { display: none; }
+            #coa-print { display: block; }
         }
     </style>
 </head>
 <body>
 
 <aside>
-    <div style="text-align: center; margin-bottom: 40px;">
-        <i data-lucide="shield-check" style="width: 50px; height: 50px; color: var(--accent);"></i>
-        <h3>نظام الجودة المعتمد</h3>
-        <p style="font-size: 12px; color: #94a3b8;">GMP/GLP Compliant v8.0</p>
-    </div>
-    <div style="font-size: 14px; line-height: 2;">
-        <div><i data-lucide="user"></i> المحلل: د. داود</div>
-        <div><i data-lucide="calendar"></i> التاريخ: <span id="currentDate"></span></div>
-    </div>
+    <h3><i data-lucide="shield-check"></i> Quality Control</h3>
+    <label>Sample Category</label>
+    <select id="sampleType" onchange="toggleFields()">
+        <option value="FP">Finished Product (FP)</option>
+        <option value="RM">Raw Material (RM)</option>
+    </select>
+    <br><br>
+    <label>Analyst Name</label>
+    <input type="text" id="analyst" value="Dr. Daoud Tajeldeinn">
 </aside>
 
 <main>
     <div class="card">
-        <div class="section-title"><i data-lucide="factory"></i> بيانات الشركة والمصنع</div>
+        <h3>Product Header Information</h3>
         <div class="grid">
-            <div class="field"><label>اسم المصنع/المورد</label><input type="text" id="mfgName" placeholder="Manufacturer Name"></div>
-            <div class="field"><label>العنوان</label><input type="text" id="mfgAddress" placeholder="Address"></div>
-            <div class="field"><label>نوع التحليل</label>
-                <select id="sampleType" onchange="toggleFields()">
-                    <option value="RM">Raw Material (المواد الخام)</option>
-                    <option value="FP">Finished Product (المنتج النهائي)</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="section-title"><i data-lucide="package"></i> معلومات المنتج (Product Specs)</div>
-        <div class="grid">
-            <div class="field"><label>اسم المادة/المنتج</label><input type="text" id="prodName"></div>
-            <div id="fpOnly" style="display:none; grid-column: span 2;">
-                <div class="grid" style="margin-bottom:0;">
-                    <div class="field"><label>الشكل الصيدلاني</label><input type="text" id="dosageForm" placeholder="Tablet, Syrup, etc."></div>
-                    <div class="field"><label>التركيز (Strength)</label><input type="text" id="strength"></div>
-                </div>
-            </div>
-            <div class="field"><label>رقم التشغيلة</label><input type="text" id="batchNo"></div>
-            <div class="field"><label>تاريخ الإنتاج</label><input type="date" id="mfgDate"></div>
-            <div class="field"><label>تاريخ الانتهاء</label><input type="date" id="expDate"></div>
-            <div class="field"><label>المواصفة المتبعة</label>
-                <select id="specStandard">
-                    <option value="BP 2025">British Pharmacopoeia (BP)</option>
-                    <option value="USP 2024">United States Pharmacopoeia (USP)</option>
-                    <option value="In-House">Internal Specification</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="section-title"><i data-lucide="test-tube-2"></i> الاختبارات والنتائج (Evidence-Based)</div>
-        <div id="testContainer">
-            </div>
-        <div class="btn-group">
-            <button class="btn-save" onclick="generateCOA()"><i data-lucide="file-check"></i> اعتماد النتائج وإصدار التقرير</button>
-            <button class="btn-print" onclick="window.print()"><i data-lucide="printer"></i> طباعة COA</button>
-        </div>
-    </div>
-</main>
-
-<div id="printArea" class="coa-print-area">
-    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px;">
-        <h2 id="outCompany">CERTIFICATE OF ANALYSIS</h2>
-        <p id="outAddress"></p>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-        <div>
-            <p><strong>Product Name:</strong> <span id="outProd"></span></p>
-            <p><strong>Batch No:</strong> <span id="outBatch"></span></p>
-            <p><strong>Mfg Date:</strong> <span id="outMfg"></span></p>
-            <p><strong>Exp Date:</strong> <span id="outExp"></span></p>
-        </div>
-        <div style="text-align: right;">
-            <p><strong>Specification:</strong> <span id="outSpec"></span></p>
-            <p><strong>Date of Analysis:</strong> <span id="outAnalDate"></span></p>
-        </div>
-    </div>
-    <table border="1" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-        <thead>
-            <tr style="background: #eee;">
-                <th>Test Parameter</th>
-                <th>Specification</th>
-                <th>Result</th>
-                <th>Conclusion</th>
-            </tr>
-        </thead>
-        <tbody id="outTableBody"></tbody>
-    </table>
-    <div style="margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center;">
-        <div><p>Analyst</p><br><p><strong>Dr. Daoud Tajeldeinn</strong></p></div>
-        <div><p>QC Manager</p><br><p>________________</p></div>
-        <div><p>QA Approval</p><br><p>________________</p></div>
-    </div>
-</div>
-
-<script>
-    lucide.createIcons();
-    document.getElementById('currentDate').innerText = new Date().toLocaleDateString();
-
-    const rawMaterialTests = [
-        {t: "Description", s: "White crystalline powder"},
-        {t: "Identification (FTIR/IR)", s: "Conforms to Reference Spectrum"},
-        {t: "Melting Point", s: "As per Monograph"},
-        {t: "Potancy / Assay", s: "99.0% - 101.0%"},
-        {t: "Related Substances (HPLC)", s: "Total Impurities < 0.5%"},
-        {t: "pH (if applicable)", s: "As per Monograph"},
-        {t: "TAMC (Micro)", s: "Max 1000 CFU/g"},
-        {t: "TYMC (Micro)", s: "Max 100 CFU/g"},
-        {t: "E. Coli", s: "Absent"}
-    ];
-
-    const finishedProductTests = [
-        {t: "Description", s: "Round Biconvex Tablets"},
-        {t: "Identification", s: "Positive for Active Ingredient"},
-        {t: "Average Weight", s: "Target weight ± 5%"},
-        {t: "Hardness (N)", s: "80N - 150N"},
-        {t: "Thickness (mm)", s: "Standard ± 0.2mm"},
-        {t: "Friability (%)", s: "NMT 1.0%"},
-        {t: "Disintegration", s: "NMT 15 Minutes"},
-        {t: "Dissolution Test", s: "Min 75% in 45 min"},
-        {t: "Assay / Potancy", s: "95.0% - 105.0%"},
-        {t: "Microbiological Quality", s: "Comply with BP/USP"}
-    ];
-
-    function toggleFields() {
-        const type = document.getElementById('sampleType').value;
-        const fpOnly = document.getElementById('fpOnly');
-        const container = document.getElementById('testContainer');
-        
-        fpOnly.style.display = (type === 'FP') ? 'block' : 'none';
-        
-        const tests = (type === 'FP') ? finishedProductTests : rawMaterialTests;
-        container.innerHTML = tests.map((test, i) => `
-            <div class="grid" style="grid-template-columns: 2fr 2fr 1fr; align-items: center;">
-                <div><label>الاختبار</label><input type="text" id="tName${i}" value="${test.t}"></div>
-                <div><label>المواصفة (BP/USP)</label><input type="text" id="tSpec${i}" value="${test.s}"></div>
-                <div><label>النتيجة</label><input type="text" id="tRes${i}" placeholder="Enter Result"></div>
-            </div>
-        `).join('');
-    }
-
-    function generateCOA() {
-        // نقل البيانات لمنطقة الطباعة
-        document.getElementById('outCompany').innerText = document.getElementById('mfgName').value || "CERTIFICATE OF ANALYSIS";
-        document.getElementById('outAddress').innerText = document.getElementById('mfgAddress').value;
-        document.getElementById('outProd').innerText = document.getElementById('prodName').value + (document.getElementById('strength').value ? ' ' + document.getElementById('strength').value : '');
-        document.getElementById('outBatch').innerText = document.getElementById('batchNo').value;
-        document.getElementById('outMfg').innerText = document.getElementById('mfgDate').value;
-        document.getElementById('outExp').innerText = document.getElementById('expDate').value;
-        document.getElementById('outSpec').innerText = document.getElementById('specStandard').value;
-        document.getElementById('outAnalDate').innerText = new Date().toLocaleDateString();
-
-        const type = document.getElementById('sampleType').value;
-        const count = (type === 'FP') ? finishedProductTests.length : rawMaterialTests.length;
-        let rows = "";
-        for(let i=0; i<count; i++) {
-            rows += `<tr>
-                <td>${document.getElementById('tName'+i).value}</td>
-                <td>${document.getElementById('tSpec'+i).value}</td>
-                <td>${document.getElementById('tRes'+i).value}</td>
-                <td>COMPLIES</td>
-            </tr>`;
-        }
-        document.getElementById('outTableBody').innerHTML = rows;
-        alert("تم تجهيز شهادة التحليل. يمكنك الآن الضغط على طباعة.");
-    }
-
-    window.onload = toggleFields;
-</script>
-</body>
-</html><!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <title>Pharma LIMS Ultra v10.0 | Dr. Daoud</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        :root { --primary: #0f172a; --accent: #0284c7; --grey: #64748b; --border: #cbd5e1; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: #f8fafc; color: #334155; display: flex; }
-        
-        /* Sidebar Navigation */
-        aside { width: 320px; background: var(--primary); color: white; height: 100vh; padding: 25px; position: fixed; box-sizing: border-box; }
-        main { margin-left: 320px; flex: 1; padding: 30px; }
-
-        /* Form Components */
-        .card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid var(--border); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        label { font-size: 11px; font-weight: 800; color: var(--grey); text-transform: uppercase; margin-bottom: 5px; display: block; }
-        input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 5px; font-size: 13px; box-sizing: border-box; }
-        
-        /* Test Table UI */
-        .test-header { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 10px; padding: 10px; background: #f1f5f9; font-weight: bold; font-size: 12px; }
-        .test-row { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-
-        /* Print Design (COA) */
-        #coa-container { display: none; background: white; padding: 40px; width: 210mm; min-height: 297mm; margin: auto; color: black; }
-        .coa-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 15px; }
-        .coa-title { text-align: center; margin: 20px 0; border: 1px solid black; padding: 5px; background: #eee; font-weight: bold; }
-        .info-table { width: 100%; margin-bottom: 20px; font-size: 12px; }
-        .info-table td { padding: 4px; vertical-align: top; }
-        .results-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .results-table th, .results-table td { border: 1px solid black; padding: 8px; text-align: left; font-size: 12px; }
-        
-        .footer-sigs { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-size: 12px; }
-        
-        @media print {
-            body { background: white; }
-            aside, main, .no-print { display: none !important; }
-            #coa-container { display: block !important; }
-        }
-    </style>
-</head>
-<body>
-
-<aside>
-    <div style="text-align:center; margin-bottom:30px;">
-        <i data-lucide="award" style="width:48px; height:48px; color:var(--accent);"></i>
-        <h2 style="font-size:18px;">QC Lab System</h2>
-        <p style="font-size:10px; opacity:0.7;">WHO/ICH/GMP Standard</p>
-    </div>
-    <div class="field"><label>Analyst Name</label><input type="text" id="analyst" value="Dr. Daoud Tajeldeinn"></div><br>
-    <div class="field"><label>QC Reference No</label><input type="text" id="qcRef" value="QC/2026/001"></div>
-</aside>
-
-<main>
-    <div class="card">
-        <h3>1. Header & Organization Info</h3>
-        <div class="grid">
-            <div><label>Company Name (Logo Text)</label><input type="text" id="compName" value="SCI Pharmaceutical Industry"></div>
-            <div><label>Factory Address</label><input type="text" id="compAddr" value="Industrial Area, Khartoum, Sudan"></div>
-            <div><label>Certificate Type</label>
-                <select id="sampleCat" onchange="setupTests()">
-                    <option value="FP">Finished Product (COA)</option>
-                    <option value="RM">Raw Material (Re-Analysis)</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>2. Product Identification</h3>
-        <div class="grid">
-            <div><label>Product Name</label><input type="text" id="prodName"></div>
-            <div><label>Generic Name</label><input type="text" id="genName"></div>
-            <div><label>Batch Number</label><input type="text" id="bn"></div>
+            <div><label>Product Name</label><input type="text" id="pName"></div>
+            <div><label>Manufacturer</label><input type="text" id="mfg"></div>
+            <div><label>A.R. Number</label><input type="text" id="arNo"></div>
         </div>
         <div class="grid">
+            <div><label>Batch No</label><input type="text" id="batch"></div>
+            <div><label>Mfg Date</label><input type="text" id="mfgDate" placeholder="MM.YYYY"></div>
+            <div><label>Exp Date</label><input type="text" id="expDate" placeholder="MM.YYYY"></div>
+        </div>
+        
+        <div class="grid" id="fp-only">
             <div><label>Strength</label><input type="text" id="strength"></div>
-            <div><label>Dosage Form</label><input type="text" id="dosage"></div>
-            <div><label>Pack Size</label><input type="text" id="pack"></div>
+            <div><label>Pack Size</label><input type="text" id="packSize"></div>
+            <div><label>Generic Name</label><input type="text" id="generic"></div>
         </div>
-        <div class="grid">
-            <div><label>Manufacturing Date</label><input type="month" id="mfgD"></div>
-            <div><label>Expiry Date</label><input type="month" id="expD"></div>
-            <div><label>Analysis Date</label><input type="date" id="anaD"></div>
+        <div class="grid" id="rm-only" style="display:none;">
+            <div><label>Date of Receipt</label><input type="date" id="recDate"></div>
+            <div><label>Date of Re-Analysis</label><input type="date" id="reAnalDate"></div>
+            <div><label>Sample Qty</label><input type="text" id="qty" value="20gm"></div>
         </div>
     </div>
 
     <div class="card">
-        <h3>3. Analytical Test Results</h3>
-        <div class="test-header">
-            <span>Test Parameter</span>
-            <span>Specification (BP/USP)</span>
-            <span>Result</span>
-            <span>Compliance</span>
-        </div>
-        <div id="testRows"></div>
-        <div style="margin-top:20px; display:flex; gap:10px;">
-            <button onclick="generateCOA()" style="background:var(--accent); color:white; padding:15px; border:none; border-radius:5px; flex:2; font-weight:bold; cursor:pointer;">Finalize & Preview COA</button>
-            <button onclick="window.print()" style="background:#10b981; color:white; padding:15px; border:none; border-radius:5px; flex:1; font-weight:bold; cursor:pointer;">Print PDF</button>
-        </div>
+        <h3>Analysis Results</h3>
+        <div id="testArea"></div>
+        <button onclick="window.print()" style="margin-top:20px; background:var(--accent); color:white; padding:10px 20px; border:none; cursor:pointer;">Generate & Print COA</button>
     </div>
 </main>
 
-<div id="coa-container">
+<div id="coa-print">
     <div class="coa-header">
-        <div style="font-size: 20px; font-weight: bold;" id="outComp"></div>
-        <div style="text-align: right; font-size: 12px;" id="outAddr"></div>
+        <div>
+            <h2 style="margin:0;">SCI Pharmaceutical Industry</h2>
+            <p style="margin:0;">Industrial Zone, Khartoum, Sudan</p>
+        </div>
+        <div style="text-align:right;">
+            <strong>A.R. NO: <span id="outAR"></span></strong>
+        </div>
     </div>
-    
-    <div class="coa-title">CERTIFICATE OF ANALYSIS</div>
-    
-    <table class="info-table">
-        <tr>
-            <td><strong>Product Name:</strong> <span id="outProd"></span></td>
-            <td><strong>Batch Number:</strong> <span id="outBN"></span></td>
-        </tr>
-        <tr>
-            <td><strong>Generic Name:</strong> <span id="outGen"></span></td>
-            <td><strong>AR No:</strong> <span id="outAR"></span></td>
-        </tr>
-        <tr>
-            <td><strong>Strength / Dosage:</strong> <span id="outStr"></span></td>
-            <td><strong>Mfg Date:</strong> <span id="outMfg"></span></td>
-        </tr>
-        <tr>
-            <td><strong>Pack Size:</strong> <span id="outPack"></span></td>
-            <td><strong>Exp Date:</strong> <span id="outExp"></span></td>
-        </tr>
-        <tr>
-            <td><strong>Specification:</strong> BP 2025 / USP</td>
-            <td><strong>Date of Analysis:</strong> <span id="outAna"></span></td>
-        </tr>
-    </table>
 
-    <table class="results-table">
+    <div class="coa-title" id="outTitle">CERTIFICATE OF ANALYSIS</div>
+
+    <table id="infoTable"></table>
+
+    <table style="margin-top:20px;">
         <thead>
-            <tr>
+            <tr style="background:#eee;">
                 <th>Test Parameter</th>
                 <th>Specification</th>
                 <th>Result</th>
-                <th>Remark</th>
+                <th>Compliance</th>
             </tr>
         </thead>
-        <tbody id="outResults"></tbody>
+        <tbody id="outTests"></tbody>
     </table>
 
-    <div style="margin-top:20px; font-size: 12px;">
-        <strong>Microbiology Results:</strong>
-        <p id="outMicro">TAMC: NMT 10³ CFU/g | TYMC: NMT 10² CFU/g | Pathogens: Absent</p>
-    </div>
-
-    <div style="margin-top:30px; border:1px solid black; padding:10px; font-size:12px;">
-        <strong>Conclusion:</strong> The above mentioned sample complies / does not comply with the requirements of the BP/USP Monograph.
-    </div>
-
-    <div class="footer-sigs">
-        <div><br><br><strong>Analyst</strong><br><span id="outAnalystName"></span></div>
-        <div><br><br><strong>QC Manager</strong><br>Sign & Date</div>
-        <div><br><br><strong>QA Approval</strong><br>Authorized Signatory</div>
+    <div class="footer">
+        <div><hr><strong>Analyst Signature</strong><br><span id="outAnalyst"></span></div>
+        <div><hr><strong>QC Manager</strong><br>Sign & Date</div>
+        <div><hr><strong>QA Release</strong><br>Authorized Signature</div>
     </div>
 </div>
 
 <script>
     lucide.createIcons();
 
-    const testConfig = {
-        "RM": [
-            {p: "Description", s: "White/Almost white crystalline powder"},
-            {p: "Identification (FTIR/IR)", s: "Conforms to Reference Spectrum"},
-            {p: "Melting Point (°C)", s: "168°C to 172°C"},
-            {p: "Assay / Potency (%)", s: "99.0% - 101.0%"},
-            {p: "Related Substances", s: "NMT 0.5% Individual"},
-            {p: "Loss on Drying", s: "Maximum 0.5%"},
-            {p: "Sulfated Ash", s: "Maximum 0.1%"}
+    const specs = {
+        FP: [
+            {t: "Description", s: "White round tablets", r: "Comply"},
+            {t: "Uniformity of Weight", s: "Target ± 5%", r: ""},
+            {t: "Disintegration", s: "NMT 15 min", r: ""},
+            {t: "Assay", s: "95% - 105%", r: ""}
         ],
-        "FP": [
-            {p: "Description", s: "White, round, uncoated tablets"},
-            {p: "Identification", s: "Positive as per Monograph"},
-            {p: "Uniformity of Weight", s: "Average Weight ± 5%"},
-            {p: "Hardness (N)", s: "80 - 150 N"},
-            {p: "Thickness (mm)", s: "Standard ± 0.2 mm"},
-            {p: "Disintegration", s: "NMT 15 minutes"},
-            {p: "Dissolution (Q)", s: "NLT 80% in 45 min"},
-            {p: "Assay / Content", s: "95.0% - 105.0%"},
-            {p: "Friability (%)", s: "NMT 1.0%"}
+        RM: [
+            {t: "Appearance", s: "Crystalline Powder", r: "Comply"},
+            {t: "Melting Point", s: "168°C - 172°C", r: ""},
+            {t: "Loss on Drying", s: "NMT 0.5%", r: ""},
+            {t: "Assay (Purity)", s: "99% - 101%", r: ""}
         ]
     };
 
-    function setupTests() {
-        const cat = document.getElementById('sampleCat').value;
-        const container = document.getElementById('testRows');
-        container.innerHTML = testConfig[cat].map((t, i) => `
-            <div class="test-row">
-                <input type="text" id="tn${i}" value="${t.p}">
-                <input type="text" id="ts${i}" value="${t.s}">
-                <input type="text" id="tr${i}" placeholder="Result">
-                <select id="tc${i}"><option>Complies</option><option>OOS</option></select>
+    function toggleFields() {
+        const type = document.getElementById('sampleType').value;
+        document.getElementById('fp-only').style.display = (type === 'FP') ? 'grid' : 'none';
+        document.getElementById('rm-only').style.display = (type === 'RM') ? 'grid' : 'none';
+        loadTests();
+    }
+
+    function loadTests() {
+        const type = document.getElementById('sampleType').value;
+        document.getElementById('testArea').innerHTML = specs[type].map((test, i) => `
+            <div class="grid">
+                <input type="text" id="tn${i}" value="${test.t}">
+                <input type="text" id="ts${i}" value="${test.s}">
+                <input type="text" id="tr${i}" value="${test.r}" placeholder="Result">
             </div>
         `).join('');
     }
 
-    function generateCOA() {
-        document.getElementById('outComp').innerText = document.getElementById('compName').value;
-        document.getElementById('outAddr').innerText = document.getElementById('compAddr').value;
-        document.getElementById('outProd').innerText = document.getElementById('prodName').value;
-        document.getElementById('outGen').innerText = document.getElementById('genName').value;
-        document.getElementById('outBN').innerText = document.getElementById('bn').value;
-        document.getElementById('outAR').innerText = document.getElementById('qcRef').value;
-        document.getElementById('outStr').innerText = document.getElementById('strength').value + " / " + document.getElementById('dosage').value;
-        document.getElementById('outPack').innerText = document.getElementById('pack').value;
-        document.getElementById('outMfg').innerText = document.getElementById('mfgD').value;
-        document.getElementById('outExp').innerText = document.getElementById('expD').value;
-        document.getElementById('outAna').innerText = document.getElementById('anaD').value;
-        document.getElementById('outAnalystName').innerText = document.getElementById('analyst').value;
+    window.onbeforeprint = function() {
+        const type = document.getElementById('sampleType').value;
+        document.getElementById('outTitle').innerText = (type === 'FP') ? "CERTIFICATE OF ANALYSIS" : "CERTIFICATE OF ANALYSIS (RE-ANALYSIS)";
+        document.getElementById('outAR').innerText = document.getElementById('arNo').value;
+        document.getElementById('outAnalyst').innerText = document.getElementById('analyst').value;
 
-        const cat = document.getElementById('sampleCat').value;
-        let html = "";
-        testConfig[cat].forEach((_, i) => {
-            html += `<tr>
-                <td>${document.getElementById('tn'+i).value}</td>
-                <td>${document.getElementById('ts'+i).value}</td>
-                <td>${document.getElementById('tr'+i).value}</td>
-                <td>${document.getElementById('tc'+i).value}</td>
-            </tr>`;
+        let info = `
+            <tr><td><strong>Product:</strong> ${document.getElementById('pName').value}</td><td><strong>Batch:</strong> ${document.getElementById('batch').value}</td></tr>
+            <tr><td><strong>Manufacturer:</strong> ${document.getElementById('mfg').value}</td><td><strong>Mfg Date:</strong> ${document.getElementById('mfgDate').value}</td></tr>
+        `;
+        
+        if(type === 'FP') {
+            info += `<tr><td><strong>Strength:</strong> ${document.getElementById('strength').value}</td><td><strong>Exp Date:</strong> ${document.getElementById('expDate').value}</td></tr>`;
+        } else {
+            info += `<tr><td><strong>Receipt Date:</strong> ${document.getElementById('recDate').value}</td><td><strong>Re-Analysis Date:</strong> ${document.getElementById('reAnalDate').value}</td></tr>`;
+        }
+        document.getElementById('infoTable').innerHTML = info;
+
+        let rows = "";
+        specs[type].forEach((_, i) => {
+            rows += `<tr><td>${document.getElementById('tn'+i).value}</td><td>${document.getElementById('ts'+i).value}</td><td>${document.getElementById('tr'+i).value}</td><td>Yes</td></tr>`;
         });
-        document.getElementById('outResults').innerHTML = html;
-        alert("COA Updated. Press Print to save PDF.");
-    }
+        document.getElementById('outTests').innerHTML = rows;
+    };
 
-    window.onload = setupTests;
+    window.onload = loadTests;
 </script>
 </body>
-</html><!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <title>Pharma LIMS Ultra v10.0 | Dr. Daoud</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        :root { --primary: #0f172a; --accent: #0284c7; --grey: #64748b; --border: #cbd5e1; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: #f8fafc; color: #334155; display: flex; }
-        
-        aside { width: 320px; background: var(--primary); color: white; height: 100vh; padding: 25px; position: fixed; box-sizing: border-box; overflow-y: auto; }
-        main { margin-left: 320px; flex: 1; padding: 30px; }
-
-        .card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid var(--border); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        label { font-size: 11px; font-weight: 800; color: var(--grey); text-transform: uppercase; margin-bottom: 5px; display: block; }
-        input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 5px; font-size: 13px; box-sizing: border-box; }
-        
-        .test-header { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 10px; padding: 10px; background: #f1f5f9; font-weight: bold; font-size: 12px; }
-        .test-row { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-
-        #coa-container { display: none; background: white; padding: 40px; width: 210mm; min-height: 297mm; margin: auto; color: black; border: 1px solid #000; }
-        .coa-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid black; padding-bottom: 15px; }
-        .coa-title { text-align: center; margin: 20px 0; border: 1px solid black; padding: 5px; background: #eee; font-weight: bold; font-size: 18px; }
-        .info-table { width: 100%; margin-bottom: 20px; font-size: 13px; border-collapse: collapse; }
-        .info-table td { border: 1px solid #ddd; padding: 6px; }
-        .results-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .results-table th, .results-table td { border: 1px solid black; padding: 8px; text-align: left; font-size: 12px; }
-        
-        .footer-sigs { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-size: 12px; gap: 20px; }
-        .sig-box { border-top: 1px solid black; padding-top: 10px; }
-
-        @media print {
-            body { background: white; }
-            aside, main, .no-print { display: none !important; }
-            #coa-container { display: block !important; }
-        }
-    </style>
-</head>
-<body>
-
-<aside>
-    <div style="text-align:center; margin-bottom:30px;">
-        <i data-lucide="microscope" style="width:48px; height:48px; color:var(--accent);"></i>
-        <h2 style="font-size:18px;">LIMS Pro v10.0</h2>
-        <p style="font-size:10px; opacity:0.7;">GMP / ICH / WHO COMPLIANT</p>
-    </div>
-    <div class="field"><label>Analyst</label><input type="text" id="analyst" value="Dr. Daoud Tajeldeinn"></div><br>
-    <div class="field"><label>A.R. Number</label><input type="text" id="qcRef" placeholder="e.g., FPP-25-073"></div>
-</aside>
-
-<main>
-    <div class="card">
-        <h3>1. Laboratory Header Info</h3>
-        <div class="grid">
-            <div><label>Company/Lab Name</label><input type="text" id="compName" value="SCI Pharmaceutical Industry"></div>
-            <div><label>Address</label><input type="text" id="compAddr" value="Industrial Zone, Khartoum, Sudan"></div>
-            <div><label>Analysis Type</label>
-                <select id="sampleCat" onchange="setupTests()">
-                    <option value="FP">Finished Product (COA)</option>
-                    <option value="RM">Raw Material (Re-Analysis)</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>2. Product Identification (Per Monograph)</h3>
-        <div class="grid">
-            <div><label>Product Name</label><input type="text" id="prodName"></div>
-            <div><label>Generic Name</label><input type="text" id="genName"></div>
-            <div><label>Manufacturer</label><input type="text" id="mfgSource"></div>
-        </div>
-        <div class="grid">
-            <div><label>Batch Number</label><input type="text" id="bn"></div>
-            <div><label>Strength</label><input type="text" id="strength"></div>
-            <div><label>Pack Size</label><input type="text" id="pack"></div>
-        </div>
-        <div class="grid">
-            <div><label>Mfg Date</label><input type="text" id="mfgD" placeholder="MM.YYYY"></div>
-            <div><label>Exp Date</label><input type="text" id="expD" placeholder="MM.YYYY"></div>
-            <div><label>Date of Analysis</label><input type="date" id="anaD"></div>
-        </div>
-        <div id="rmFields" style="display:none;" class="grid">
-            <div><label>Date of Receipt</label><input type="date" id="recDate"></div>
-            <div><label>Sample QTY</label><input type="text" id="sqty" placeholder="e.g., 20gm"></div>
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>3. Results & Compliance</h3>
-        <div class="test-header">
-            <span>Test Parameter</span>
-            <span>Specification</span>
-            <span>Result</span>
-            <span>Comply</span>
-        </div>
-        <div id="testRows"></div>
-        
-        <h4 style="margin-top:30px; border-bottom:1px solid #ddd;">Microbiology Section</h4>
-        <div id="microRows"></div>
-
-        <div style="margin-top:20px; display:flex; gap:10px;">
-            <button onclick="generateCOA()" style="background:var(--accent); color:white; padding:15px; border:none; border-radius:5px; flex:2; font-weight:bold; cursor:pointer;">Preview COA</button>
-            <button onclick="window.print()" style="background:#10b981; color:white; padding:15px; border:none; border-radius:5px; flex:1; font-weight:bold; cursor:pointer;">Print Certificate</button>
-        </div>
-    </div>
-</main>
-
-<div id="coa-container">
-    <div class="coa-header">
-        <div>
-            <divٍٍ
+</html>

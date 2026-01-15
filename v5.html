@@ -327,4 +327,451 @@
     window.onload = switchMode;
 </script>
 </body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pharma Smart LIMS v11.0 | Dr. Daoud</title>
+    <style>
+        :root { --pass: #22c55e; --fail: #ef4444; --bg: #f8fafc; --primary: #1e293b; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: var(--bg); }
+        
+        /* Dashboard Header */
+        .dashboard-nav { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .status-badge { padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #334155; }
+        .btn-print { background: #0284c7; color: white; border: none; padding: 10px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-print:hover { background: #0369a1; }
+
+        /* Input Area Style */
+        .input-section { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .grid-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .field-group { display: flex; flex-direction: column; }
+        label { font-size: 11px; font-weight: bold; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+
+        /* Interactive Table */
+        .test-card { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-top: 20px; }
+        .test-header { background: #f1f5f9; display: grid; grid-template-columns: 2fr 2fr 1.5fr 1fr; padding: 12px; font-weight: bold; font-size: 13px; }
+        .test-row { display: grid; grid-template-columns: 2fr 2fr 1.5fr 1fr; padding: 10px; border-bottom: 1px solid #f1f5f9; align-items: center; }
+        .res-input { border: 2px solid #cbd5e1; transition: 0.3s; }
+        .res-input.pass { border-color: var(--pass); background: #f0fdf4; }
+        .res-input.fail { border-color: var(--fail); background: #fef2f2; }
+
+        /* Official COA (Hidden in Dashboard, Visible in Print) */
+        #coa-paper { display: none; width: 210mm; background: white; padding: 40px; margin: auto; color: black; border: 1px solid #000; }
+        .coa-header { display: flex; justify-content: space-between; border-bottom: 2px solid black; padding-bottom: 10px; }
+        .title-bar { text-align: center; border: 1px solid black; padding: 5px; font-weight: bold; font-size: 18px; margin: 20px 0; background: #f0f0f0; }
+        .info-container { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+        .info-table { width: 49%; border-collapse: collapse; font-size: 11px; }
+        .info-table td { border: 1px solid #000; padding: 5px; }
+        .info-table td:first-child { background: #fafafa; font-weight: bold; width: 40%; }
+        .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .results-table th, .results-table td { border: 1px solid black; padding: 8px; text-align: left; }
+
+        @media print {
+            .no-print, .dashboard-nav, .input-section { display: none !important; }
+            #coa-paper { display: block !important; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-nav no-print">
+    <div>
+        <span style="font-size: 18px; font-weight: bold;">LIMS Smart Dashboard v11.0</span>
+        <span class="status-badge" id="appStatus">STATUS: IN-PROGRESS</span>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <select id="sampleType" onchange="initApp()" style="background:#334155; color:white; border:none;">
+            <option value="FP">Finished Product</option>
+            <option value="RM">Raw Material</option>
+        </select>
+        <button class="btn-print" onclick="window.print()">Generate & Print COA</button>
+    </div>
+</div>
+
+<div class="input-section no-print">
+    <h3>1. General Information</h3>
+    <div class="grid-inputs">
+        <div class="field-group"><label>Product Name</label><input type="text" id="in_name" placeholder="e.g. Aspruna 100mg" oninput="sync()"></div>
+        <div class="field-group"><label>Batch Number</label><input type="text" id="in_batch" oninput="sync()"></div>
+        <div class="field-group"><label>A.R. Number</label><input type="text" id="in_ar" oninput="sync()"></div>
+        <div class="field-group"><label>Mfg Date</label><input type="text" id="in_mfg" placeholder="MM.YYYY" oninput="sync()"></div>
+        <div class="field-group"><label>Exp Date</label><input type="text" id="in_exp" placeholder="MM.YYYY" oninput="sync()"></div>
+        <div class="field-group" id="fp_field"><label>Strength</label><input type="text" id="in_str" oninput="sync()"></div>
+    </div>
+
+    <h3>2. Quality Control Analysis</h3>
+    <div class="test-card">
+        <div class="test-header">
+            <span>Test Parameter</span>
+            <span>Specification</span>
+            <span>Result (Enter here)</span>
+            <span>Pass/Fail</span>
+        </div>
+        <div id="testRows"></div>
+    </div>
+</div>
+
+<div id="coa-paper">
+    <div class="coa-header">
+        <div>
+            <h1 style="margin:0; font-size: 22px;">SCI Pharmaceutical Industry</h1>
+            <p style="margin:0; font-size: 12px;">Quality Control Department - Khartoum, Sudan</p>
+        </div>
+        <div style="text-align: right; font-size: 12px;">
+            <strong>A.R. NO:</strong> <span id="out_ar"></span><br>
+            <strong>Date:</strong> <span id="out_today"></span>
+        </div>
+    </div>
+
+    <div class="title-bar" id="out_title">CERTIFICATE OF ANALYSIS (COA)</div>
+
+    <div class="info-container">
+        <table class="info-table">
+            <tr><td>Product Name</td><td id="out_name"></td></tr>
+            <tr><td>Manufacturer</td><td>SCI Industries</td></tr>
+            <tr><td>Strength</td><td id="out_str"></td></tr>
+        </table>
+        <table class="info-table">
+            <tr><td>Batch Number</td><td id="out_batch"></td></tr>
+            <tr><td>Mfg. Date</td><td id="out_mfg"></td></tr>
+            <tr><td>Exp. Date</td><td id="out_exp"></td></tr>
+        </table>
+    </div>
+
+    <table class="results-table">
+        <thead>
+            <tr><th>Test Parameter</th><th>Specification</th><th>Result</th><th>Comply</th></tr>
+        </thead>
+        <tbody id="out_test_body"></tbody>
+    </table>
+
+    <div style="margin-top:50px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align:center; font-size:12px;">
+        <div><hr style="width:80%"><strong>Analyst</strong><br>Dr. Daoud Tajeldeinn</div>
+        <div><hr style="width:80%"><strong>QC Manager</strong></div>
+        <div><hr style="width:80%"><strong>QA Approval</strong></div>
+    </div>
+</div>
+
+<script>
+    const configs = {
+        FP: [
+            {t: "Description", s: "White tablets", val: "Comply", type: "text"},
+            {t: "Weight Variation", s: "255mg ± 5%", min: 242, max: 268, type: "num"},
+            {t: "Disintegration", s: "NMT 15 min", max: 15, type: "num"},
+            {t: "Assay", s: "95.0 - 105.0%", min: 95, max: 105, type: "num"}
+        ],
+        RM: [
+            {t: "Description", s: "White powder", val: "Comply", type: "text"},
+            {t: "Melting Point", s: "168 - 172°C", min: 168, max: 172, type: "num"},
+            {t: "Assay (Purity)", s: "99.0 - 101.0%", min: 99, max: 101, type: "num"}
+        ]
+    };
+
+    function initApp() {
+        const mode = document.getElementById('sampleType').value;
+        const rows = configs[mode];
+        document.getElementById('testRows').innerHTML = rows.map((r, i) => `
+            <div class="test-row">
+                <span>${r.t}</span>
+                <span style="font-size:12px; color:#64748b;">${r.s}</span>
+                <input type="text" class="res-input" id="res_${i}" oninput="validate(${i})">
+                <span id="stat_${i}" style="font-weight:bold;">-</span>
+            </div>
+        `).join('');
+        sync();
+    }
+
+    function validate(i) {
+        const mode = document.getElementById('sampleType').value;
+        const config = configs[mode][i];
+        const input = document.getElementById(`res_${i}`);
+        const status = document.getElementById(`stat_${i}`);
+        const val = parseFloat(input.value);
+
+        let isPass = false;
+        if (config.type === "num") {
+            isPass = (!config.min || val >= config.min) && (!config.max || val <= config.max);
+        } else {
+            isPass = input.value.toLowerCase().includes("comply") || input.value.toLowerCase().includes("white");
+        }
+
+        if (input.value === "") {
+            input.className = "res-input";
+            status.innerText = "-";
+            status.style.color = "black";
+        } else if (isPass) {
+            input.className = "res-input pass";
+            status.innerText = "PASS";
+            status.style.color = "var(--pass)";
+        } else {
+            input.className = "res-input fail";
+            status.innerText = "FAIL";
+            status.style.color = "var(--fail)";
+        }
+        sync();
+    }
+
+    function sync() {
+        document.getElementById('out_name').innerText = document.getElementById('in_name').value;
+        document.getElementById('out_batch').innerText = document.getElementById('in_batch').value;
+        document.getElementById('out_ar').innerText = document.getElementById('in_ar').value;
+        document.getElementById('out_mfg').innerText = document.getElementById('in_mfg').value;
+        document.getElementById('out_exp').innerText = document.getElementById('in_exp').value;
+        document.getElementById('out_str').innerText = document.getElementById('in_str').value;
+        document.getElementById('out_today').innerText = new Date().toLocaleDateString();
+
+        const mode = document.getElementById('sampleType').value;
+        let html = "";
+        configs[mode].forEach((r, i) => {
+            const val = document.getElementById(`res_${i}`).value;
+            const pass = document.getElementById(`stat_${i}`).innerText;
+            html += `<tr><td>${r.t}</td><td>${r.s}</td><td>${val}</td><td>${pass === 'PASS' ? 'Yes' : (pass === 'FAIL' ? 'No' : '-')}</td></tr>`;
+        });
+        document.getElementById('out_test_body').innerHTML = html;
+    }
+
+    window.onload = initApp;
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIMS Smart Dashboard v11.0 | SCI Pharmaceutical</title>
+    <style>
+        :root { --pass: #10b981; --fail: #ef4444; --primary: #1e293b; --accent: #3b82f6; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); }
+        
+        /* Dashboard Header */
+        .dashboard-nav { background: var(--primary); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; background: #334155; border: 1px solid #475569; }
+        .btn-print { background: var(--accent); color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        /* Entry Form Layout */
+        .app-container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .grid-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        input, select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+        /* Smart Test Table */
+        .test-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .test-table th { text-align: left; padding: 12px; background: #f1f5f9; color: #475569; font-size: 13px; }
+        .test-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
+        .res-input { width: 100%; box-sizing: border-box; font-weight: 600; }
+        
+        /* Status Colors */
+        .pass-input { border: 2px solid var(--pass) !important; background: #f0fdf4 !important; color: #166534; }
+        .fail-input { border: 2px solid var(--fail) !important; background: #fef2f2 !important; color: #991b1b; }
+        .status-text { font-weight: bold; font-size: 12px; }
+
+        /* Printable COA Styles */
+        #coa-print-area { display: none; }
+        @media print {
+            .no-print { display: none !important; }
+            #coa-print-area { display: block !important; padding: 40px; background: white; color: black; font-family: 'Times New Roman', serif; }
+            .official-header { display: flex; justify-content: space-between; border-bottom: 2px solid black; padding-bottom: 10px; }
+            .coa-title { text-align: center; border: 1px solid black; padding: 5px; margin: 15px 0; font-weight: bold; font-size: 20px; background: #eee !important; -webkit-print-color-adjust: exact; }
+            .parallel-tables { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            .parallel-tables table { width: 48%; border-collapse: collapse; font-size: 12px; }
+            .parallel-tables td { border: 1px solid black; padding: 5px; }
+            .parallel-tables td:first-child { font-weight: bold; background: #f9f9f9 !important; -webkit-print-color-adjust: exact; }
+            .results-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+            .results-table th, .results-table td { border: 1px solid black; padding: 8px; text-align: left; }
+            .footer { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-nav no-print">
+    <div>
+        <span style="font-size: 1.2rem; font-weight: 800; letter-spacing: -0.5px;">SCI LIMS <span style="color:var(--accent)">v11.0</span></span>
+        <span class="status-badge" id="app-status">STATUS: DRAFT</span>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <select id="sampleMode" onchange="initApp()" style="background:#475569; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">
+            <option value="FP">Finished Product (Aspirin/Paramol)</option>
+            <option value="RM">Raw Material (MCC/Starch)</option>
+        </select>
+        <button class="btn-print" onclick="window.print()">Print Final COA</button>
+    </div>
+</div>
+
+<div class="app-container no-print">
+    <div class="card">
+        <label style="color:var(--accent); font-size:14px;">1. Header Data Entry</label>
+        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+        <div class="grid-header">
+            <div class="input-group"><label>Product Name</label><input type="text" id="in_pname" oninput="updateCOA()"></div>
+            <div class="input-group"><label>Batch No.</label><input type="text" id="in_batch" oninput="updateCOA()"></div>
+            <div class="input-group"><label>A.R. Number</label><input type="text" id="in_ar" oninput="updateCOA()"></div>
+            <div class="input-group"><label>Mfg. Date</label><input type="text" id="in_mfg" placeholder="MM.YYYY" oninput="updateCOA()"></div>
+            <div class="input-group"><label>Exp. Date</label><input type="text" id="in_exp" placeholder="MM.YYYY" oninput="updateCOA()"></div>
+            <div class="input-group" id="strength_box"><label>Strength</label><input type="text" id="in_str" oninput="updateCOA()"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <label style="color:var(--accent); font-size:14px;">2. Analysis & Validation</label>
+        <table class="test-table">
+            <thead>
+                <tr>
+                    <th width="30%">Test Parameter</th>
+                    <th width="35%">Specification</th>
+                    <th width="20%">Result</th>
+                    <th width="15%">Conformance</th>
+                </tr>
+            </thead>
+            <tbody id="dynamicTests"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="coa-print-area">
+    <div class="official-header">
+        <div>
+            <h1 style="margin:0;">SCI Pharmaceutical Industry</h1>
+            <p style="margin:0;">Quality Control Lab | Khartoum - Sudan</p>
+        </div>
+        <div style="text-align: right;">
+            <strong>A.R. NO: <span id="out_ar"></span></strong><br>
+            <strong>Date: <span id="out_date"></span></strong>
+        </div>
+    </div>
+
+    <div class="coa-title" id="coa-title-text">CERTIFICATE OF ANALYSIS (COA)</div>
+
+    <div class="parallel-tables">
+        <table>
+            <tr><td>Product Name</td><td id="out_pname"></td></tr>
+            <tr><td>Manufacturer</td><td>SCI</td></tr>
+            <tr class="fp-field"><td>Strength</td><td id="out_str"></td></tr>
+            <tr class="rm-field" style="display:none;"><td>Date of Receipt</td><td id="out_rec"></td></tr>
+        </table>
+        <table>
+            <tr><td>Batch Number</td><td id="out_batch"></td></tr>
+            <tr><td>Mfg. Date</td><td id="out_mfg"></td></tr>
+            <tr><td>Exp. Date</td><td id="out_exp"></td></tr>
+        </table>
+    </div>
+
+    <table class="results-table">
+        <thead>
+            <tr style="background:#eee !important;">
+                <th>Test Parameter</th>
+                <th>Specification</th>
+                <th>Result</th>
+                <th>Comply</th>
+            </tr>
+        </thead>
+        <tbody id="out_results"></tbody>
+    </table>
+
+    <div class="footer">
+        <div><hr><strong>Analyst</strong><br>Dr. Daoud Tajeldeinn</div>
+        <div><hr><strong>QC Manager</strong><br>Signature & Date</div>
+        <div><hr><strong>QA Approval</strong><br>Authorized Signatory</div>
+    </div>
+</div>
+
+<script>
+    const testMaster = {
+        FP: [
+            {t: "Description", s: "White, round, uncoated tablets", type: "text", target: "comply"},
+            {t: "Uniformity of Weight", s: "255 mg ± 5%", type: "range", min: 242.2, max: 267.8},
+            {t: "Hardness", s: "70 - 120 N", type: "range", min: 70, max: 120},
+            {t: "Disintegration", s: "NMT 15 min", type: "max", limit: 15},
+            {t: "Assay", s: "95.0% - 105.0%", type: "range", min: 95.0, max: 105.0}
+        ],
+        RM: [
+            {t: "Appearance", s: "White crystalline powder", type: "text", target: "comply"},
+            {t: "Melting Point", s: "168°C - 172°C", type: "range", min: 168, max: 172},
+            {t: "Loss on Drying", s: "Max 0.5%", type: "max", limit: 0.5},
+            {t: "Assay", s: "99.0% - 101.0%", type: "range", min: 99.0, max: 101.0}
+        ]
+    };
+
+    function initApp() {
+        const mode = document.getElementById('sampleMode').value;
+        const rows = testMaster[mode];
+        const tbody = document.getElementById('dynamicTests');
+        
+        document.getElementById('strength_box').style.display = (mode === 'FP') ? 'flex' : 'none';
+
+        tbody.innerHTML = rows.map((test, i) => `
+            <tr>
+                <td><strong>${test.t}</strong></td>
+                <td style="font-size:12px; color:#64748b;">${test.s}</td>
+                <td><input type="text" class="res-input" id="val_${i}" oninput="checkTest(${i})"></td>
+                <td id="status_${i}" class="status-text">-</td>
+            </tr>
+        `).join('');
+        updateCOA();
+    }
+
+    function checkTest(i) {
+        const mode = document.getElementById('sampleMode').value;
+        const config = testMaster[mode][i];
+        const input = document.getElementById(`val_${i}`);
+        const status = document.getElementById(`status_${i}`);
+        const value = input.value.trim();
+
+        let pass = false;
+        if (value === "") {
+            input.className = "res-input";
+            status.innerText = "-";
+            updateCOA();
+            return;
+        }
+
+        if (config.type === "text") {
+            pass = value.toLowerCase().includes(config.target);
+        } else if (config.type === "range") {
+            const num = parseFloat(value);
+            pass = num >= config.min && num <= config.max;
+        } else if (config.type === "max") {
+            const num = parseFloat(value);
+            pass = num <= config.limit;
+        }
+
+        input.className = pass ? "res-input pass-input" : "res-input fail-input";
+        status.innerText = pass ? "PASS" : "FAIL";
+        status.style.color = pass ? "var(--pass)" : "var(--fail)";
+        
+        updateCOA();
+    }
+
+    function updateCOA() {
+        // Sync Header
+        document.getElementById('out_pname').innerText = document.getElementById('in_pname').value;
+        document.getElementById('out_batch').innerText = document.getElementById('in_batch').value;
+        document.getElementById('out_ar').innerText = document.getElementById('in_ar').value;
+        document.getElementById('out_mfg').innerText = document.getElementById('in_mfg').value;
+        document.getElementById('out_exp').innerText = document.getElementById('in_exp').value;
+        document.getElementById('out_str').innerText = document.getElementById('in_str').value;
+        document.getElementById('out_date').innerText = new Date().toLocaleDateString();
+        
+        const mode = document.getElementById('sampleMode').value;
+        document.getElementById('coa-title-text').innerText = (mode === 'FP') ? "CERTIFICATE OF ANALYSIS (COA)" : "COA - RE-ANALYSIS REPORT";
+
+        // Sync Results
+        let resultHtml = "";
+        testMaster[mode].forEach((test, i) => {
+            const val = document.getElementById(`val_${i}`).value || "-";
+            const stat = document.getElementById(`status_${i}`).innerText;
+            resultHtml += `<tr><td>${test.t}</td><td>${test.s}</td><td>${val}</td><td>${stat === 'PASS' ? 'Yes' : (stat === 'FAIL' ? 'No' : '-')}</td></tr>`;
+        });
+        document.getElementById('out_results').innerHTML = resultHtml;
+    }
+
+    window.onload = initApp;
+</script>
+</body>
 </html>

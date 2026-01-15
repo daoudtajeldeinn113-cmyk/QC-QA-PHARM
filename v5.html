@@ -2,350 +2,156 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pharma Enterprise System v12.0</title>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>SCI PHARMA - Full LIMS</title>
     <style>
-        :root { --primary: #0f172a; --accent: #0ea5e9; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --bg: #f1f5f9; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+        :root { --side-bg: #1a202c; --active: #3182ce; --text: #f7fafc; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; background: #f0f2f5; overflow: hidden; }
         
         /* Sidebar */
-        aside { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
-        .logo-box { padding: 20px; border-bottom: 1px solid #334155; text-align: center; background: #020617; }
-        .nav-item { padding: 15px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #1e293b; transition: 0.3s; }
-        .nav-item:hover, .nav-item.active { background: var(--accent); }
-        
+        .sidebar { width: 250px; background: var(--side-bg); color: var(--text); display: flex; flex-direction: column; flex-shrink: 0; }
+        .logo { padding: 20px; text-align: center; background: #111827; font-weight: bold; font-size: 20px; color: #63b3ed; }
+        .nav-item { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid #2d3748; display: flex; align-items: center; gap: 10px; transition: 0.3s; }
+        .nav-item:hover { background: #2d3748; }
+        .nav-item.active { background: var(--active); border-left: 4px solid #ebf8ff; }
+        .nav-group { padding: 10px 20px; font-size: 11px; color: #718096; text-transform: uppercase; letter-spacing: 1px; }
+
         /* Main Content */
-        main { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; }
-        
-        /* Dashboard Cards */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid var(--accent); }
-        .stat-card h3 { margin: 0 0 10px 0; color: #64748b; font-size: 14px; text-transform: uppercase; }
-        .stat-card .value { font-size: 24px; font-weight: bold; color: #1e293b; }
+        .main { flex: 1; overflow-y: auto; padding: 25px; }
+        .view { display: none; animation: fadeIn 0.3s; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Tables & Lists */
-        .data-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .data-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 12px; color: #475569; border-bottom: 2px solid #e2e8f0; }
-        .data-table td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        /* Cards & UI */
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .stat { padding: 15px; border-radius: 8px; color: white; }
         
-        /* Status Badges */
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
-        .badge.released { background: #dcfce7; color: #166534; }
-        .badge.quarantine { background: #fef3c7; color: #92400e; }
-        .badge.oos { background: #fee2e2; color: #991b1b; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border-bottom: 1px solid #edf2f7; text-align: left; }
+        th { background: #f8fafc; font-size: 13px; }
 
-        /* Forms & Inputs */
-        .form-section { background: white; padding: 25px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: none; }
-        .form-section.active { display: block; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        label { display: block; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 5px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; }
-        
-        /* Test Row Styles */
-        .test-row { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 10px; padding: 10px; background: #f8fafc; margin-bottom: 5px; border-radius: 4px; border: 1px solid #e2e8f0; align-items: center; }
-        .pass-field { border-color: var(--success); background-color: #f0fdf4; }
-        .fail-field { border-color: var(--danger); background-color: #fef2f2; }
-
-        /* Printable COA */
-        #coa-print { display: none; }
-        @media print {
-            aside, .no-print { display: none !important; }
-            #coa-print { display: block !important; width: 100%; height: 100%; background: white; padding: 20px; }
-            .coa-header-table { width: 100%; border-bottom: 3px solid black; margin-bottom: 20px; }
-            .coa-body-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-            .coa-body-table th, .coa-body-table td { border: 1px solid black; padding: 8px; text-align: left; font-size: 12px; }
-            .watermark { position: absolute; top: 30%; left: 20%; font-size: 100px; color: rgba(0,0,0,0.05); transform: rotate(-45deg); z-index: -1; }
-        }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 5px; margin-top: 5px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-green { background: #38a169; color: white; }
     </style>
 </head>
 <body>
 
-<aside class="no-print">
-    <div class="logo-box">
-        <i data-lucide="activity" style="color:var(--accent); width:40px; height:40px;"></i>
-        <h3 style="margin:10px 0 0 0;">PHARMA MES</h3>
-        <small style="opacity:0.6;">v12.0 Enterprise</small>
-    </div>
-    <div class="nav-item active" onclick="showView('dashboard')"><i data-lucide="layout-dashboard"></i> Dashboard & Batches</div>
-    <div class="nav-item" onclick="showView('new-batch')"><i data-lucide="plus-circle"></i> New Batch Entry</div>
-    <div class="nav-item" onclick="showView('ipc-granulation')"><i data-lucide="layers"></i> IPC: Granulation</div>
-    <div class="nav-item" onclick="showView('ipc-compression')"><i data-lucide="disc"></i> IPC: Compression</div>
-    <div class="nav-item" onclick="showView('qc-release')"><i data-lucide="flask-conical"></i> QC Final Release</div>
-    <div class="nav-item" onclick="showView('capa')"><i data-lucide="alert-triangle"></i> OOS & CAPA</div>
-</aside>
+<div class="sidebar">
+    <div class="logo">SCI PHARMA</div>
+    
+    <div class="nav-group">General</div>
+    <div class="nav-item active" onclick="switchTab('dash', this)">📊 Dashboard</div>
+    <div class="nav-item" onclick="switchTab('new-batch', this)">➕ New Batch Entry</div>
 
-<main>
-    <div id="dashboard" class="form-section active">
-        <h2 style="margin-top:0; color:var(--primary);">Batch Traceability Dashboard</h2>
-        <div class="dashboard-grid">
-            <div class="stat-card">
-                <h3>Batches in Process</h3>
-                <div class="value" id="count-process">3</div>
-            </div>
-            <div class="stat-card" style="border-left-color: var(--success);">
-                <h3>Released Batches</h3>
-                <div class="value" id="count-released">128</div>
-            </div>
-            <div class="stat-card" style="border-left-color: var(--danger);">
-                <h3>OOS / Deviations</h3>
-                <div class="value" id="count-oos">1</div>
-            </div>
-        </div>
-        
-        <h3>Recent Batch Flow</h3>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Batch No</th>
-                    <th>Product</th>
-                    <th>Current Stage</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="batch-list">
-                <tr>
-                    <td><strong>TA01</strong></td>
-                    <td>Aspirin 100mg</td>
-                    <td>Final Release</td>
-                    <td><span class="badge released">RELEASED</span></td>
-                    <td><button onclick="printCOA('TA01')">Print COA</button></td>
-                </tr>
-                <tr>
-                    <td><strong>PA004</strong></td>
-                    <td>Paracetamol 500mg</td>
-                    <td>Compression</td>
-                    <td><span class="badge quarantine">IN-PROCESS</span></td>
-                    <td><button onclick="alert('Go to IPC Compression')">Track</button></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <div class="nav-group">In-Process Control</div>
+    <div class="nav-item" onclick="switchTab('granulation', this)">⚙️ Granulation</div>
+    <div class="nav-item" onclick="switchTab('compression', this)">💊 Compression</div>
 
-    <div id="new-batch" class="form-section">
-        <h2>Initiate New Batch</h2>
-        <div class="grid-4">
-            <div><label>Product Type</label>
-                <select id="n_type" onchange="toggleRawFields()">
-                    <option value="FP">Finished Product</option>
-                    <option value="RM">Raw Material</option>
-                </select>
-            </div>
-            <div><label>Product Name</label><input type="text" id="n_name"></div>
-            <div><label>Batch No.</label><input type="text" id="n_batch"></div>
-            <div><label>A.R. Number</label><input type="text" id="n_ar"></div>
-        </div>
-        <div class="grid-4">
-            <div><label>Mfg Date</label><input type="month" id="n_mfg"></div>
-            <div><label>Exp Date</label><input type="month" id="n_exp"></div>
-            <div class="fp-only"><label>Batch Size</label><input type="text"></div>
-            <div class="rm-only" style="display:none;"><label>Supplier</label><input type="text"></div>
-        </div>
-        <button onclick="saveNewBatch()" style="margin-top:20px; background:var(--accent); color:white; border:none; padding:12px 25px; border-radius:5px; cursor:pointer;">Start Processing</button>
-    </div>
+    <div class="nav-group">Quality Control</div>
+    <div class="nav-item" onclick="switchTab('qc-release', this)">🧪 Final Release</div>
+    <div class="nav-item" onclick="switchTab('oos', this)">⚠️ OOS & CAPA</div>
+</div>
 
-    <div id="qc-release" class="form-section">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2>QC Final Release Testing</h2>
-            <button onclick="window.print()" style="background:var(--success); color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;"><i data-lucide="printer"></i> Print COA</button>
+<div class="main">
+    <div id="view-dash" class="view active">
+        <h2>Operations Overview</h2>
+        <div class="grid">
+            <div class="stat" style="background: #3182ce;"><h4>Active Batches</h4><h2>4</h2></div>
+            <div class="stat" style="background: #38a169;"><h4>Released Today</h4><h2>12</h2></div>
+            <div class="stat" style="background: #e53e3e;"><h4>Pending OOS</h4><h2>0</h2></div>
         </div>
-        
-        <div class="grid-2">
-            <div>
-                <label>Select Batch to Test</label>
-                <select id="qc_batch_select" onchange="loadQCParams()">
-                    <option value="">-- Select Active Batch --</option>
-                    <option value="FP">Aspirin 100mg (FP)</option>
-                    <option value="RM">Magnesium Stearate (RM)</option>
-                </select>
-            </div>
-            <div>
-                 <label>Specification Reference</label>
-                 <select id="spec_ref">
-                     <option>BP 2025</option>
-                     <option>USP 44</option>
-                     <option>In-House</option>
-                 </select>
-            </div>
-        </div>
-
-        <h3 style="margin-top:20px;">Test Results Entry</h3>
-        <div id="test_container"></div>
-        
-        <div style="margin-top:20px; padding:15px; background:#fff7ed; border:1px solid #fed7aa; border-radius:6px;">
-            <strong>Conformance Status: </strong> <span id="final_decision" style="font-weight:bold;">PENDING</span>
+        <div class="card" style="margin-top:20px;">
+            <h3>Live Batch Tracking</h3>
+            <table>
+                <tr><th>Batch #</th><th>Product</th><th>Current Stage</th><th>Status</th></tr>
+                <tr><td>TA01</td><td>Aspirin 100mg</td><td>QC Release</td><td><b style="color:green">Ready</b></td></tr>
+                <tr><td>PA004</td><td>Paramol 500mg</td><td>Compression</td><td><b style="color:orange">Processing</b></td></tr>
+            </table>
         </div>
     </div>
 
-    <div id="capa" class="form-section">
-        <h2 style="color:var(--danger);">OOS & CAPA Management</h2>
-        <p>Log deviation or OOS results here.</p>
-        <div class="grid-2">
-            <div><label>Related Batch</label><input type="text"></div>
-            <div><label>Deviation Date</label><input type="date"></div>
+    <div id="view-new-batch" class="view">
+        <h2>Start New Manufacturing Batch</h2>
+        <div class="card">
+            <div class="grid">
+                <div><label>Product Name</label><input type="text" placeholder="e.g. Aspirin"></div>
+                <div><label>Batch Number</label><input type="text" placeholder="e.g. B2025-01"></div>
+                <div><label>Planned Quantity</label><input type="number"></div>
+            </div>
+            <button class="btn btn-green" style="margin-top:15px;">Initialize Batch</button>
         </div>
-        <div style="margin-top:10px;"><label>Root Cause Analysis</label><textarea style="width:100%; height:80px; border:1px solid #ccc;"></textarea></div>
-        <button style="margin-top:10px; background:var(--danger); color:white; border:none; padding:10px;">Log OOS Report</button>
     </div>
 
-</main>
-
-<div id="coa-print">
-    <table class="coa-header-table" style="border:none;">
-        <tr>
-            <td style="width:15%; border:none;"><img src="https://via.placeholder.com/80x80?text=LOGO" alt="Logo"></td>
-            <td style="width:55%; border:none;">
-                <h1 style="margin:0; font-size:24px;">SCI Pharmaceutical Industry</h1>
-                <p style="margin:0;">Industrial Zone, Khartoum, Sudan</p>
-                <p style="margin:5px 0 0 0; font-weight:bold;">QUALITY CONTROL DEPARTMENT</p>
-            </td>
-            <td style="width:30%; border:none; text-align:right;">
-                <strong>CERTIFICATE OF ANALYSIS</strong><br>
-                <span id="p_type_label">FINISHED PRODUCT</span>
-            </td>
-        </tr>
-    </table>
-
-    <div class="watermark" id="p_watermark">RELEASED</div>
-
-    <table class="coa-body-table">
-        <tr>
-            <td style="background:#f0f0f0; width:20%;"><strong>Product Name</strong></td>
-            <td width="30%" id="p_name">Aspirin 100mg Tablets</td>
-            <td style="background:#f0f0f0; width:20%;"><strong>A.R. Number</strong></td>
-            <td width="30%" id="p_ar">FPP-25-073</td>
-        </tr>
-        <tr>
-            <td style="background:#f0f0f0;"><strong>Generic Name</strong></td>
-            <td id="p_gen">Acetylsalicylic Acid</td>
-            <td style="background:#f0f0f0;"><strong>Batch No.</strong></td>
-            <td id="p_batch">TA01</td>
-        </tr>
-        <tr>
-            <td style="background:#f0f0f0;"><strong>Manufacturer</strong></td>
-            <td>SCI Pharma</td>
-            <td style="background:#f0f0f0;"><strong>Mfg. Date</strong></td>
-            <td id="p_mfg">09.2025</td>
-        </tr>
-        <tr>
-            <td style="background:#f0f0f0;"><strong>Specification</strong></td>
-            <td id="p_spec">BP 2025</td>
-            <td style="background:#f0f0f0;"><strong>Exp. Date</strong></td>
-            <td id="p_exp">08.2028</td>
-        </tr>
-    </table>
-
-    <h4 style="margin:20px 0 5px 0; text-decoration:underline;">TEST RESULTS:</h4>
-    <table class="coa-body-table">
-        <thead>
-            <tr style="background:#e0e0e0;">
-                <th width="30%">Test Parameter</th>
-                <th width="35%">Specification / Limits</th>
-                <th width="20%">Result</th>
-                <th width="15%">Compliance</th>
-            </tr>
-        </thead>
-        <tbody id="p_results_body">
-            </tbody>
-    </table>
-
-    <div style="margin-top:20px; border:1px solid black; padding:10px; font-size:12px;">
-        <strong>Remarks:</strong> The above sample complies with the prescribed specifications. <br>
-        <strong>Conformance Status:</strong> <span id="p_status">RELEASED</span>
+    <div id="view-granulation" class="view">
+        <h2>IPC: Granulation Stage</h2>
+        <div class="card">
+            <h3>Moisture Content & Sizing</h3>
+            <div class="grid">
+                <div><label>LOD % (Target < 3%)</label><input type="number" step="0.1"></div>
+                <div><label>Granule Temp (°C)</label><input type="number"></div>
+                <div><label>Analyst Name</label><input type="text"></div>
+            </div>
+            <button class="btn btn-green" style="margin-top:15px;">Save IPC Data</button>
+        </div>
     </div>
 
-    <div style="margin-top:60px; display:flex; justify-content:space-between; text-align:center;">
-        <div>
-            <hr style="width:150px; border-top:1px solid black;">
-            <strong>Analyst</strong><br>
-            Dr. Daoud Tajeldeinn
+    <div id="view-compression" class="view">
+        <h2>IPC: Compression Stage</h2>
+        <div class="card">
+            <div class="grid">
+                <div><label>Avg Weight (mg)</label><input type="number"></div>
+                <div><label>Hardness (N)</label><input type="number"></div>
+                <div><label>Thickness (mm)</label><input type="number"></div>
+                <div><label>Friability (%)</label><input type="number"></div>
+            </div>
+            <button class="btn btn-green" style="margin-top:15px;">Log Physical Tests</button>
         </div>
-        <div>
-            <hr style="width:150px; border-top:1px solid black;">
-            <strong>Checked By</strong><br>
-            QC Manager
+    </div>
+
+    <div id="view-qc-release" class="view">
+        <h2>Quality Control: Final Release</h2>
+        <div class="card">
+            <p>Click to generate official COA for batches that completed all IPC stages.</p>
+            <table>
+                <tr><th>Batch</th><th>Assay %</th><th>Dissolution</th><th>Action</th></tr>
+                <tr><td>TA01</td><td>101.2%</td><td>98%</td><td><button class="btn btn-green">Print COA</button></td></tr>
+            </table>
         </div>
-        <div>
-            <hr style="width:150px; border-top:1px solid black;">
-            <strong>Approved By</strong><br>
-            QA Manager
+    </div>
+
+    <div id="view-oos" class="view">
+        <h2 style="color:#e53e3e;">OOS / CAPA Management</h2>
+        <div class="card">
+            <label>Failure Description</label>
+            <textarea placeholder="Describe the out-of-specification result..."></textarea>
+            <button class="btn" style="background:#e53e3e; color:white; margin-top:10px;">Open Investigation</button>
         </div>
     </div>
 </div>
 
 <script>
-    lucide.createIcons();
+    function switchTab(tabId, element) {
+        // 1. Hide all views
+        document.querySelectorAll('.view').forEach(view => {
+            view.classList.remove('active');
+        });
 
-    // Configuration Database
-    const testConfig = {
-        FP: [
-            { t: "Description", s: "White, round tablets", type: "select", opts: ["Comply", "Non-Comply"] },
-            { t: "Identification A (IR)", s: "Concordant with RS", type: "select", opts: ["Concordant", "Not Concordant"] },
-            { t: "Identification B (Chemical)", s: "Positive Reaction", type: "select", opts: ["Positive", "Negative"] },
-            { t: "Average Weight", s: "255mg ± 5%", type: "range", min: 242.25, max: 267.75 },
-            { t: "Thickness", s: "3.8 - 4.2 mm", type: "range", min: 3.8, max: 4.2 },
-            { t: "Diameter", s: "10.0 ± 0.2 mm", type: "range", min: 9.8, max: 10.2 },
-            { t: "Hardness", s: "70 - 120 N", type: "range", min: 70, max: 120 },
-            { t: "Friability", s: "NMT 1.0%", type: "max", limit: 1.0 },
-            { t: "Disintegration", s: "NMT 15 min", type: "max", limit: 15 },
-            { t: "Dissolution", s: "NLT 80% (Q) in 45 min", type: "min", limit: 80 },
-            { t: "Related Substances (HPLC)", s: "Max 0.5% (Single)", type: "max", limit: 0.5 },
-            { t: "Assay (HPLC)", s: "95.0% - 105.0%", type: "range", min: 95.0, max: 105.0 },
-            { t: "Microbiology (TAMC)", s: "NMT 1000 CFU/g", type: "select", opts: ["< 10", "< 100", "> 1000 (Fail)"] }
-        ],
-        RM: [
-            { t: "Description", s: "Crystalline powder", type: "select", opts: ["Comply", "Non-Comply"] },
-            { t: "Solubility", s: "Soluble in water", type: "select", opts: ["Comply", "Non-Comply"] },
-            { t: "Identification (IR)", s: "Concordant", type: "select", opts: ["Concordant", "Not Concordant"] },
-            { t: "Melting Point", s: "168°C - 172°C", type: "range", min: 168, max: 172 },
-            { t: "Loss on Drying", s: "Max 0.5%", type: "max", limit: 0.5 },
-            { t: "Sulphated Ash", s: "Max 0.1%", type: "max", limit: 0.1 },
-            { t: "Heavy Metals", s: "Max 20 ppm", type: "max", limit: 20 },
-            { t: "Assay (Dry Basis)", s: "99.0% - 101.0%", type: "range", min: 99.0, max: 101.0 }
-        ]
-    };
+        // 2. Deactivate all nav items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
 
-    function showView(id) {
-        document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        // 3. Show selected view
+        const targetView = document.getElementById('view-' + tabId);
+        if(targetView) {
+            targetView.classList.add('active');
+        }
+
+        // 4. Set clicked item as active
+        element.classList.add('active');
     }
+</script>
 
-    function toggleRawFields() {
-        const type = document.getElementById('n_type').value;
-        document.querySelector('.fp-only').style.display = type === 'FP' ? 'block' : 'none';
-        document.querySelector('.rm-only').style.display = type === 'RM' ? 'block' : 'none';
-    }
-
-    function loadQCParams() {
-        const type = document.getElementById('qc_batch_select').value;
-        if(!type) return;
-
-        const container = document.getElementById('test_container');
-        const tests = testConfig[type];
-
-        container.innerHTML = tests.map((t, i) => {
-            let inputHTML = '';
-            if(t.type === 'select') {
-                inputHTML = `<select id="res_${i}" onchange="validate(${i}, '${type}')">
-                    <option value="">Select Result...</option>
-                    ${t.opts.map(o => `<option value="${o}">${o}</option>`).join('')}
-                </select>`;
-            } else {
-                inputHTML = `<input type="number" id="res_${i}" step="0.01" oninput="validate(${i}, '${type}')" placeholder="Value">`;
-            }
-
-            return `<div class="test-row">
-                <div>${t.t}</div>
-                <div style="font-size:12px;">${t.s}</div>
-                <div>${inputHTML}</div>
-                <div id="stat_${i}" style="font-weight:bold;">-</div>
-            </div>`;
-        }).join('');
-    }
-
-    function validate(idx, type) {
-        const conf = testConfig[type][idx];
-        const input = document.getElementById(`res_${idx}`);
-        const stat = document.getElementById(`stat_${idx}`);
-        const val = input
+</body>
+</html>

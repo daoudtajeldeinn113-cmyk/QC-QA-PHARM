@@ -203,4 +203,237 @@
     window.onload = toggleFields;
 </script>
 </body>
+</html><!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Pharma LIMS Ultra v10.0 | Dr. Daoud</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #0284c7; --grey: #64748b; --border: #cbd5e1; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; background: #f8fafc; color: #334155; display: flex; }
+        
+        /* Sidebar Navigation */
+        aside { width: 320px; background: var(--primary); color: white; height: 100vh; padding: 25px; position: fixed; box-sizing: border-box; }
+        main { margin-left: 320px; flex: 1; padding: 30px; }
+
+        /* Form Components */
+        .card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid var(--border); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        label { font-size: 11px; font-weight: 800; color: var(--grey); text-transform: uppercase; margin-bottom: 5px; display: block; }
+        input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 5px; font-size: 13px; box-sizing: border-box; }
+        
+        /* Test Table UI */
+        .test-header { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 10px; padding: 10px; background: #f1f5f9; font-weight: bold; font-size: 12px; }
+        .test-row { display: grid; grid-template-columns: 2fr 2fr 1fr 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+
+        /* Print Design (COA) */
+        #coa-container { display: none; background: white; padding: 40px; width: 210mm; min-height: 297mm; margin: auto; color: black; }
+        .coa-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid black; padding-bottom: 15px; }
+        .coa-title { text-align: center; margin: 20px 0; border: 1px solid black; padding: 5px; background: #eee; font-weight: bold; }
+        .info-table { width: 100%; margin-bottom: 20px; font-size: 12px; }
+        .info-table td { padding: 4px; vertical-align: top; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .results-table th, .results-table td { border: 1px solid black; padding: 8px; text-align: left; font-size: 12px; }
+        
+        .footer-sigs { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; font-size: 12px; }
+        
+        @media print {
+            body { background: white; }
+            aside, main, .no-print { display: none !important; }
+            #coa-container { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+<aside>
+    <div style="text-align:center; margin-bottom:30px;">
+        <i data-lucide="award" style="width:48px; height:48px; color:var(--accent);"></i>
+        <h2 style="font-size:18px;">QC Lab System</h2>
+        <p style="font-size:10px; opacity:0.7;">WHO/ICH/GMP Standard</p>
+    </div>
+    <div class="field"><label>Analyst Name</label><input type="text" id="analyst" value="Dr. Daoud Tajeldeinn"></div><br>
+    <div class="field"><label>QC Reference No</label><input type="text" id="qcRef" value="QC/2026/001"></div>
+</aside>
+
+<main>
+    <div class="card">
+        <h3>1. Header & Organization Info</h3>
+        <div class="grid">
+            <div><label>Company Name (Logo Text)</label><input type="text" id="compName" value="SCI Pharmaceutical Industry"></div>
+            <div><label>Factory Address</label><input type="text" id="compAddr" value="Industrial Area, Khartoum, Sudan"></div>
+            <div><label>Certificate Type</label>
+                <select id="sampleCat" onchange="setupTests()">
+                    <option value="FP">Finished Product (COA)</option>
+                    <option value="RM">Raw Material (Re-Analysis)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>2. Product Identification</h3>
+        <div class="grid">
+            <div><label>Product Name</label><input type="text" id="prodName"></div>
+            <div><label>Generic Name</label><input type="text" id="genName"></div>
+            <div><label>Batch Number</label><input type="text" id="bn"></div>
+        </div>
+        <div class="grid">
+            <div><label>Strength</label><input type="text" id="strength"></div>
+            <div><label>Dosage Form</label><input type="text" id="dosage"></div>
+            <div><label>Pack Size</label><input type="text" id="pack"></div>
+        </div>
+        <div class="grid">
+            <div><label>Manufacturing Date</label><input type="month" id="mfgD"></div>
+            <div><label>Expiry Date</label><input type="month" id="expD"></div>
+            <div><label>Analysis Date</label><input type="date" id="anaD"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>3. Analytical Test Results</h3>
+        <div class="test-header">
+            <span>Test Parameter</span>
+            <span>Specification (BP/USP)</span>
+            <span>Result</span>
+            <span>Compliance</span>
+        </div>
+        <div id="testRows"></div>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button onclick="generateCOA()" style="background:var(--accent); color:white; padding:15px; border:none; border-radius:5px; flex:2; font-weight:bold; cursor:pointer;">Finalize & Preview COA</button>
+            <button onclick="window.print()" style="background:#10b981; color:white; padding:15px; border:none; border-radius:5px; flex:1; font-weight:bold; cursor:pointer;">Print PDF</button>
+        </div>
+    </div>
+</main>
+
+<div id="coa-container">
+    <div class="coa-header">
+        <div style="font-size: 20px; font-weight: bold;" id="outComp"></div>
+        <div style="text-align: right; font-size: 12px;" id="outAddr"></div>
+    </div>
+    
+    <div class="coa-title">CERTIFICATE OF ANALYSIS</div>
+    
+    <table class="info-table">
+        <tr>
+            <td><strong>Product Name:</strong> <span id="outProd"></span></td>
+            <td><strong>Batch Number:</strong> <span id="outBN"></span></td>
+        </tr>
+        <tr>
+            <td><strong>Generic Name:</strong> <span id="outGen"></span></td>
+            <td><strong>AR No:</strong> <span id="outAR"></span></td>
+        </tr>
+        <tr>
+            <td><strong>Strength / Dosage:</strong> <span id="outStr"></span></td>
+            <td><strong>Mfg Date:</strong> <span id="outMfg"></span></td>
+        </tr>
+        <tr>
+            <td><strong>Pack Size:</strong> <span id="outPack"></span></td>
+            <td><strong>Exp Date:</strong> <span id="outExp"></span></td>
+        </tr>
+        <tr>
+            <td><strong>Specification:</strong> BP 2025 / USP</td>
+            <td><strong>Date of Analysis:</strong> <span id="outAna"></span></td>
+        </tr>
+    </table>
+
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th>Test Parameter</th>
+                <th>Specification</th>
+                <th>Result</th>
+                <th>Remark</th>
+            </tr>
+        </thead>
+        <tbody id="outResults"></tbody>
+    </table>
+
+    <div style="margin-top:20px; font-size: 12px;">
+        <strong>Microbiology Results:</strong>
+        <p id="outMicro">TAMC: NMT 10³ CFU/g | TYMC: NMT 10² CFU/g | Pathogens: Absent</p>
+    </div>
+
+    <div style="margin-top:30px; border:1px solid black; padding:10px; font-size:12px;">
+        <strong>Conclusion:</strong> The above mentioned sample complies / does not comply with the requirements of the BP/USP Monograph.
+    </div>
+
+    <div class="footer-sigs">
+        <div><br><br><strong>Analyst</strong><br><span id="outAnalystName"></span></div>
+        <div><br><br><strong>QC Manager</strong><br>Sign & Date</div>
+        <div><br><br><strong>QA Approval</strong><br>Authorized Signatory</div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    const testConfig = {
+        "RM": [
+            {p: "Description", s: "White/Almost white crystalline powder"},
+            {p: "Identification (FTIR/IR)", s: "Conforms to Reference Spectrum"},
+            {p: "Melting Point (°C)", s: "168°C to 172°C"},
+            {p: "Assay / Potency (%)", s: "99.0% - 101.0%"},
+            {p: "Related Substances", s: "NMT 0.5% Individual"},
+            {p: "Loss on Drying", s: "Maximum 0.5%"},
+            {p: "Sulfated Ash", s: "Maximum 0.1%"}
+        ],
+        "FP": [
+            {p: "Description", s: "White, round, uncoated tablets"},
+            {p: "Identification", s: "Positive as per Monograph"},
+            {p: "Uniformity of Weight", s: "Average Weight ± 5%"},
+            {p: "Hardness (N)", s: "80 - 150 N"},
+            {p: "Thickness (mm)", s: "Standard ± 0.2 mm"},
+            {p: "Disintegration", s: "NMT 15 minutes"},
+            {p: "Dissolution (Q)", s: "NLT 80% in 45 min"},
+            {p: "Assay / Content", s: "95.0% - 105.0%"},
+            {p: "Friability (%)", s: "NMT 1.0%"}
+        ]
+    };
+
+    function setupTests() {
+        const cat = document.getElementById('sampleCat').value;
+        const container = document.getElementById('testRows');
+        container.innerHTML = testConfig[cat].map((t, i) => `
+            <div class="test-row">
+                <input type="text" id="tn${i}" value="${t.p}">
+                <input type="text" id="ts${i}" value="${t.s}">
+                <input type="text" id="tr${i}" placeholder="Result">
+                <select id="tc${i}"><option>Complies</option><option>OOS</option></select>
+            </div>
+        `).join('');
+    }
+
+    function generateCOA() {
+        document.getElementById('outComp').innerText = document.getElementById('compName').value;
+        document.getElementById('outAddr').innerText = document.getElementById('compAddr').value;
+        document.getElementById('outProd').innerText = document.getElementById('prodName').value;
+        document.getElementById('outGen').innerText = document.getElementById('genName').value;
+        document.getElementById('outBN').innerText = document.getElementById('bn').value;
+        document.getElementById('outAR').innerText = document.getElementById('qcRef').value;
+        document.getElementById('outStr').innerText = document.getElementById('strength').value + " / " + document.getElementById('dosage').value;
+        document.getElementById('outPack').innerText = document.getElementById('pack').value;
+        document.getElementById('outMfg').innerText = document.getElementById('mfgD').value;
+        document.getElementById('outExp').innerText = document.getElementById('expD').value;
+        document.getElementById('outAna').innerText = document.getElementById('anaD').value;
+        document.getElementById('outAnalystName').innerText = document.getElementById('analyst').value;
+
+        const cat = document.getElementById('sampleCat').value;
+        let html = "";
+        testConfig[cat].forEach((_, i) => {
+            html += `<tr>
+                <td>${document.getElementById('tn'+i).value}</td>
+                <td>${document.getElementById('ts'+i).value}</td>
+                <td>${document.getElementById('tr'+i).value}</td>
+                <td>${document.getElementById('tc'+i).value}</td>
+            </tr>`;
+        });
+        document.getElementById('outResults').innerHTML = html;
+        alert("COA Updated. Press Print to save PDF.");
+    }
+
+    window.onload = setupTests;
+</script>
+</body>
 </html>

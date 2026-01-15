@@ -2,69 +2,25 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>QC-QA Pharma Dashboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
-        th { background-color: #27ae60; color: white; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>لوحة تحكم الجودة (QC-QA Pharma)</h1>
-        <p>مرحباً بك في نظام إدارة جودة الأدوية الخاص بك.</p>
-        <table>
-            <tr>
-                <th>اسم العينة</th>
-                <th>تاريخ الفحص</th>
-                <th>النتيجة</th>
-                <th>الحالة</th>
-            </tr>
-            <tr>
-                <td>Paracetamol 500mg</td>
-                <td>2026-01-14</td>
-                <td>99.8%</td>
-                <td style="color: green;">مطابق</td>
-            </tr>
-        </table>
-    </div>
-</body>
-</html>
-<div class="card" style="margin-top: 20px;">
-    <h2>مستندات إضافية</h2>
-    <ul>
-        <li><a href="data.xlsx">تحميل ملف نتائج المختبر (Excel)</a></li>
-        <li><a href="SOP-001.pdf">عرض دليل إجراءات التشغيل (SOP)</a></li>
-    </ul>
-</div>
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام QC-QA Pharma | د. داود تاج الدين</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1, h2 { color: #2c3e50; border-bottom: 2px solid #27ae60; padding-bottom: 10px; }
-        
-        /* تصميم النموذج */
+        h1, h2 { color: #2c3e50; border-bottom: 3px solid #27ae60; padding-bottom: 10px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #34495e; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        
-        .btn { background-color: #27ae60; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; transition: 0.3s; }
-        .btn:hover { background-color: #219150; }
-
-        /* تصميم الجدول */
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-        th, td { border: 1px solid #eee; padding: 12px; text-align: center; }
-        th { background-color: #2c3e50; color: white; }
-        .status-pass { color: #27ae60; font-weight: bold; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #34495e; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .btn { background-color: #2c3e50; color: white; padding: 15px; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 10px; transition: 0.3s; }
+        .btn:hover { background-color: #1a252f; }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; border-radius: 10px; overflow: hidden; }
+        th, td { border: 1px solid #eee; padding: 15px; text-align: center; }
+        th { background-color: #27ae60; color: white; }
+        .pass { background-color: #d4edda; color: #155724; font-weight: bold; display: block; padding: 5px; border-radius: 4px; }
+        .oos { background-color: #f8d7da; color: #721c24; font-weight: bold; display: block; padding: 5px; border-radius: 4px; border: 1px solid #f5c6cb; }
+        .limit-info { font-size: 0.85em; color: #666; display: block; }
     </style>
 </head>
 <body>
@@ -76,75 +32,109 @@
     </div>
 
     <div class="card">
-        <h2>إدخال بيانات فحص عينة جديدة</h2>
-        <div class="form-group">
-            <label>اسم المستحضر (Product Name):</label>
-            <input type="text" id="prodName" placeholder="مثلاً: Paracetamol 500mg">
+        <h2>نموذج فحص وتحليل العينات</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>اسم المنتج:</label>
+                <select id="prodName" onchange="updateMonographInfo()">
+                    <option value="">-- اختر المنتج --</option>
+                    <option value="Paracetamol">Paracetamol 500mg Tab</option>
+                    <option value="Metformin">Metformin 850mg Tab</option>
+                    <option value="Amoxicillin">Amoxicillin 500mg Cap</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>المرجع الدوائي:</label>
+                <select id="specType" onchange="updateMonographInfo()">
+                    <option value="BP">British Pharmacopoeia (BP)</option>
+                    <option value="USP">United States Pharmacopeia (USP)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>رقم التشغيلة:</label>
+                <input type="text" id="batchNo" placeholder="Batch Number">
+            </div>
+            <div class="form-group">
+                <label>النتيجة النهائية (%):</label>
+                <input type="number" id="resultValue" step="0.01" placeholder="مثلاً: 98.5">
+            </div>
         </div>
-        <div class="form-group">
-            <label>رقم التشغيلة (Batch No.):</label>
-            <input type="text" id="batchNo" placeholder="مثلاً: BN12345">
-        </div>
-        <div class="form-group">
-            <label>نوع التحليل (Test):</label>
-            <select id="testType">
-                <option value="Assay">Assay</option>
-                <option value="Dissolution">Dissolution</option>
-                <option value="Impurity">Impurity</option>
-                <option value="pH">pH Value</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>النتيجة (Result %):</label>
-            <input type="number" id="result" placeholder="99.5">
-        </div>
-        <button class="btn" onclick="addRecord()">حفظ النتيجة في الجدول</button>
+        <button class="btn" onclick="validateAndSave()">تحليل النتيجة واعتمادها</button>
     </div>
 
     <div class="card">
-        <h2>سجل نتائج المختبر المستلمة</h2>
+        <h2>سجل النتائج المخبرية</h2>
         <table id="resultsTable">
             <thead>
                 <tr>
-                    <th>المستحضر</th>
-                    <th>رقم التشغيلة</th>
-                    <th>الاختبار</th>
+                    <th>المنتج</th>
+                    <th>التشغيلة</th>
+                    <th>المواصفة / المرجع</th>
                     <th>النتيجة</th>
-                    <th>الحالة</th>
+                    <th>القرار</th>
                 </tr>
             </thead>
-            <tbody>
-                </tbody>
+            <tbody></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    function addRecord() {
-        const name = document.getElementById('prodName').value;
+    const pharmaDB = {
+        "Paracetamol": {
+            "BP": { min: 95.0, max: 105.0, test: "Assay" },
+            "USP": { min: 90.0, max: 110.0, test: "Assay" }
+        },
+        "Metformin": {
+            "BP": { min: 95.0, max: 105.0, test: "Assay" },
+            "USP": { min: 98.0, max: 102.0, test: "Assay" }
+        },
+        "Amoxicillin": {
+            "BP": { min: 92.5, max: 110.0, test: "Assay" },
+            "USP": { min: 90.0, max: 120.0, test: "Assay" }
+        }
+    };
+
+    function validateAndSave() {
+        const prod = document.getElementById('prodName').value;
+        const spec = document.getElementById('specType').value;
         const batch = document.getElementById('batchNo').value;
-        const test = document.getElementById('testType').value;
-        const result = document.getElementById('result').value;
-        
-        if(!name || !batch || !result) { alert("يرجى ملء كافة الخانات"); return; }
+        const resultVal = document.getElementById('resultValue').value;
+        const result = parseFloat(resultVal);
+
+        if (!prod || !batch || isNaN(result)) {
+            alert("يرجى اختيار المنتج ورقم التشغيلة وإدخال النتيجة بدقة.");
+            return;
+        }
+
+        const limits = pharmaDB[prod][spec];
+        const min = limits.min;
+        const max = limits.max;
+
+        let statusText, statusClass;
+
+        // مقارنة رقمية دقيقة
+        if (result >= min && result <= max) {
+            statusText = "مطابق (Complies)";
+            statusClass = "pass";
+        } else {
+            statusText = "خارج المواصفة (OOS)";
+            statusClass = "oos";
+        }
 
         const table = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
-        const newRow = table.insertRow();
-
-        newRow.innerHTML = `
-            <td>${name}</td>
+        const row = table.insertRow(0);
+        row.innerHTML = `
+            <td>${prod}</td>
             <td>${batch}</td>
-            <td>${test}</td>
+            <td>${spec} - ${limits.test} <span class="limit-info">(${min}% - ${max}%)</span></td>
             <td>${result}%</td>
-            <td class="status-pass">مطابق (Passed)</td>
+            <td><span class="${statusClass}">${statusText}</span></td>
         `;
 
-        // تفريغ الخانات بعد الحفظ
-        document.getElementById('prodName').value = '';
-        document.getElementById('batchNo').value = '';
-        document.getElementById('result').value = '';
+        // إعادة ضبط خانة النتيجة فقط
+        document.getElementById('resultValue').value = '';
     }
 </script>
-
 </body>
 </html>

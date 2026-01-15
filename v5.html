@@ -188,3 +188,164 @@
                 id: Date.now(),
                 date: new Date().toLocaleDateString(),
                 p, bn, test: spec.t, limit: `${spec.min}-${spec.max}`, val, status, analyst
+                <!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Pharma ERP v5.2 | Dr. Daoud</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #10b981; --bg: #f1f5f9; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        aside { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; padding: 20px; }
+        main { flex: 1; overflow-y: auto; padding: 25px; }
+        .card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        label { display: block; font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 5px; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        .btn { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: right; font-size: 13px; }
+        .badge { padding: 4px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+        .pass { background: #dcfce7; color: #166534; }
+        .fail { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <aside>
+        <h2 style="color: var(--accent); font-size: 18px;">نظام د. داود المطور</h2>
+        <p style="font-size: 11px; color: #94a3b8;">إدارة الجودة v5.2</p>
+        <hr style="border: 0.5px solid #334155; width: 100%; margin: 20px 0;">
+        <div style="font-size: 14px; color: white;"><i data-lucide="check-circle"></i> المختبر الفني</div>
+    </aside>
+
+    <main>
+        <div class="card">
+            <h3 style="margin-top:0;">تسجيل تحليل جديد</h3>
+            <div class="grid">
+                <div>
+                    <label>القسم</label>
+                    <select id="cat" onchange="loadProducts()">
+                        <option value="">-- اختر القسم --</option>
+                        <option value="RM">المواد الفعالة (API)</option>
+                        <option value="EXC">المواد المسوغة (Excipients)</option>
+                        <option value="FP">المنتج النهائي (Finished)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>المادة / المستحضر</label>
+                    <select id="prod" onchange="loadTests()"></select>
+                </div>
+                <div>
+                    <label>رقم التشغيلة</label>
+                    <input type="text" id="bn" placeholder="Batch No">
+                </div>
+            </div>
+            <div class="grid">
+                <div>
+                    <label>الاختبار</label>
+                    <select id="test"></select>
+                </div>
+                <div>
+                    <label>النتيجة</label>
+                    <input type="number" id="val" step="0.01">
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button class="btn" onclick="addEntry()">حفظ في السجل</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>سجل النتائج</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>المادة</th>
+                        <th>التشغيلة</th>
+                        <th>الاختبار</th>
+                        <th>النتيجة</th>
+                        <th>الحالة</th>
+                        <th>التقرير</th>
+                    </tr>
+                </thead>
+                <tbody id="logBody"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // قاعدة البيانات المصححة والمفصلة
+        const db = {
+            "RM": {
+                "Paracetamol BP": [{t:"Assay", min:99.0, max:101.0}, {t:"LOD", min:0, max:0.5}],
+                "Aspirin BP": [{t:"Assay", min:99.5, max:101.0}, {t:"Sulfated Ash", min:0, max:0.1}],
+                "Diclofenac Potassium": [{t:"Assay", min:99.0, max:101.0}]
+            },
+            "EXC": {
+                "Magnesium Stearate": [{t:"Mg Content", min:4.0, max:5.0}, {t:"Acid Value", min:195, max:210}],
+                "Maize Starch": [{t:"pH", min:4.0, max:7.0}, {t:"Loss on Drying", min:0, max:15.0}],
+                "Sodium Bicarbonate": [{t:"Assay", min:99.0, max:101.0}, {t:"pH", min:0, max:8.6}]
+            },
+            "FP": {
+                "Aspirin 75mg Tab": [{t:"Assay", min:95.0, max:105.0}, {t:"Dissolution", min:70, max:100}],
+                "Ibuprofen 400mg Tab": [{t:"Hardness", min:80, max:150}],
+                "Povidone Iodine 10%": [{t:"Available Iodine", min:0.85, max:1.20}]
+            }
+        };
+
+        function loadProducts() {
+            const cat = document.getElementById('cat').value;
+            const pSel = document.getElementById('prod');
+            pSel.innerHTML = '<option value="">-- اختر المادة --</option>';
+            if(cat && db[cat]) {
+                Object.keys(db[cat]).forEach(p => pSel.add(new Option(p, p)));
+            }
+        }
+
+        function loadTests() {
+            const cat = document.getElementById('cat').value;
+            const prod = document.getElementById('prod').value;
+            const tSel = document.getElementById('test');
+            tSel.innerHTML = '';
+            if(prod && db[cat][prod]) {
+                db[cat][prod].forEach((t, i) => tSel.add(new Option(`${t.t} (${t.min}-${t.max})`, i)));
+            }
+        }
+
+        let logs = [];
+
+        function addEntry() {
+            const c = document.getElementById('cat').value;
+            const p = document.getElementById('prod').value;
+            const tIdx = document.getElementById('test').value;
+            const val = parseFloat(document.getElementById('val').value);
+            const bn = document.getElementById('bn').value;
+
+            if(!p || isNaN(val)) return alert("أكمل البيانات");
+
+            const spec = db[c][p][tIdx];
+            const isPass = val >= spec.min && val <= spec.max;
+            
+            logs.unshift({p, bn, test: spec.t, val, status: isPass?'PASS':'OOS', limit: `${spec.min}-${spec.max}`});
+            render();
+        }
+
+        function render() {
+            document.getElementById('logBody').innerHTML = logs.map(l => `
+                <tr>
+                    <td>${l.p}</td>
+                    <td>${l.bn}</td>
+                    <td>${l.test}</td>
+                    <td>${l.val}</td>
+                    <td><span class="badge ${l.status==='PASS'?'pass':'fail'}">${l.status}</span></td>
+                    <td><button onclick="alert('جاري توليد PDF للتشغيلة '+ '${l.bn}')">PDF</button></td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

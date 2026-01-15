@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PQMS V006 - FULL COMPENDIAL SYSTEM | DR. DAOUD AHMED</title>
+
+  <style>
+    :root { --navy:#002b5b; --blue:#159895; --gold:#fbc252; --bg:#f0f2f5; --white:#ffffff; --border:#d1d5db; --ok:#27ae60; --bad:#e74c3c; --warn:#f59e0b; }
+    body { margin:0; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; background:var(--bg); display:flex; height:100vh; overflow:hidden; }
+    * { user-select:none; -webkit-user-select:none; box-sizing:border-box; }
+
+    .sidebar { width:300px; background:var(--navy); color:#fff; display:flex; flex-direction:column; flex-shrink:0; border-left:5px solid var(--gold); }
+    .sidebar-header { padding:25px; text-align:center; background:#001c3d; border-bottom:1px solid rgba(255,255,255,0.1); }
+    .nav-section { overflow-y:auto; flex-grow:1; }
+    .nav-label { padding:15px 20px 5px; font-size:11px; color:var(--gold); text-transform:uppercase; font-weight:bold; letter-spacing:1px; text-align:right; }
+    .nav-btn { padding:12px 20px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); transition:.25s; font-size:12px; text-align:right; display:flex; justify-content:space-between; align-items:center; color:#e0e0e0; }
+    .nav-btn:hover { background:#004080; color:#fff; }
+    .nav-btn.active { background:var(--blue); border-right:5px solid var(--gold); font-weight:bold; }
+
+    .main-content { flex-grow:1; overflow-y:auto; padding:25px; }
+    .official-header { background:var(--white); border:2px solid var(--navy); padding:20px; border-radius:10px; margin-bottom:18px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+    .batch-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:15px; text-align:right; }
+    .field-group { display:flex; flex-direction:column; }
+    .field-group label { font-size:11px; font-weight:bold; color:var(--navy); margin-bottom:5px; }
+    .field-group input { border:1px solid #ccc; padding:6px; border-radius:4px; font-size:12px; }
+
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+    .btn { padding:10px 14px; border:none; cursor:pointer; border-radius:8px; font-weight:800; font-size:12px; }
+    .btn-primary { background:var(--navy); color:#fff; }
+    .btn-ghost { background:#fff; color:var(--navy); border:1px solid var(--border); }
+
+    .card { background:var(--white); border:1px solid var(--border); border-radius:10px; margin-bottom:18px; overflow:hidden; }
+    .card-title { background:#f8f9fa; padding:12px 20px; font-weight:bold; color:var(--navy); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+
+    table { width:100%; border-collapse:collapse; }
+    th { background:#eff3f6; color:var(--navy); font-size:12px; padding:12px; border-bottom:2px solid var(--border); text-align:right; }
+    td { padding:12px; font-size:13px; border-bottom:1px solid #eee; text-align:right; }
+
+    .spec-col { background:#fdfdfd; color:#1a5f7a; direction:ltr; text-align:left; font-family:monospace; font-size:11px; }
+    .res-input { width:100%; padding:7px; border:1px solid #ddd; border-radius:6px; text-align:center; }
+    .badge { padding:4px 10px; border-radius:20px; font-size:10px; font-weight:bold; color:white; }
+    .pass { background:var(--ok); }
+    .fail { background:var(--bad); }
+
+    .summary-bar { padding:12px 20px; display:flex; gap:12px; align-items:center; justify-content:space-between; border-top:1px dashed #e5e7eb; }
+    .pill { padding:6px 15px; border-radius:999px; font-size:12px; font-weight:800; }
+    .pill.ok { background:#eafff2; color:#0f5132; border:1px solid #b7f3cd; }
+    .pill.bad { background:#ffecec; color:#7a1c1c; border:1px solid #ffc0c0; }
+
+    @media print { .sidebar, .no-print { display:none !important; } .main-content { padding:0; } .btn { display:none !important; } }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar no-print">
+    <div class="sidebar-header">
+      <div style="font-size:20px; font-weight:bold; color:var(--gold);">PQMS V006</div>
+      <div style="font-size:11px; opacity:.85;">د. داود أحمد</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">المواد الفعالة (APIs)</div>
+      <div class="nav-btn active" onclick="renderCOA('metro', this)">Metronidazole <span>مترونيدازول</span></div>
+      <div class="nav-btn" onclick="renderCOA('aspirin', this)">Aspirin <span>أسبرين</span></div>
+      <div class="nav-btn" onclick="renderCOA('paracetamol', this)">Paracetamol <span>باراسيتامول</span></div>
+    </div>
+  </div>
+
+  <div class="main-content" id="app_ws"></div>
+
+  <script>
+    const db = {
+      metro: {
+        name: "Metronidazole (BP 2025)",
+        specs: [
+          { t: "Characters", s: "White or yellowish powder", r: "White crystalline powder" },
+          { t: "Assay (Titration)", s: "99.0% to 101.0%", r: "100.2%" },
+          { t: "Loss on drying", s: "NMT 0.5%", r: "0.2%" }
+        ],
+        micro: true
+      },
+      aspirin: {
+        name: "Aspirin (BP 2025)",
+        specs: [
+          { t: "Assay", s: "99.5% to 101.0%", r: "100.3%" },
+          { t: "Loss on drying", s: "NMT 0.5%", r: "0.15%" }
+        ],
+        micro: true
+      },
+      paracetamol: {
+        name: "Paracetamol (BP 2025)",
+        specs: [
+          { t: "Assay", s: "99.0% to 101.0%", r: "99.8%" },
+          { t: "Loss on drying", s: "NMT 0.5%", r: "0.3%" }
+        ],
+        micro: true
+      }
+    };
+
+    function renderCOA(id, btn) {
+      if(btn) {
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+      const m = db[id];
+      const today = new Date().toISOString().split('T')[0];
+
+      let html = `
+        <div class="toolbar no-print">
+          <button class="btn btn-primary" onclick="evaluateAll()">تحديث التقييم النهائي</button>
+          <button class="btn btn-ghost" onclick="window.print()">طباعة</button>
+        </div>
+
+        <div class="official-header">
+          <div style="font-size:18px; font-weight:bold; color:var(--navy);">شهادة تحليل مخبري (COA)</div>
+          <div class="batch-grid" style="margin-top:15px;">
+            <div class="field-group"><label>اسم المادة</label><input value="${m.name}"></div>
+            <div class="field-group"><label>رقم التشغيلة</label><input value="BN-2025-001"></div>
+            <div class="field-group"><label>تاريخ التحليل</label><input type="date" value="${today}"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">النتائج الكيميائية</div>
+          <table>
+            <thead>
+              <tr><th>الاختبار</th><th>المواصفة</th><th>النتيجة</th><th>الحالة</th></tr>
+            </thead>
+            <tbody id="chem_body">
+              ${m.specs.map(s => `
+                <tr class="test-row" data-spec="${s.s}">
+                  <td>${s.t}</td>
+                  <td class="spec-col">${s.s}</td>
+                  <td><input class="res-input" value="${s.r}" oninput="evaluateAll()"></td>
+                  <td class="status-cell"></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="summary-bar">
+          <div id="overall_status" class="pill">جاري الفحص...</div>
+        </div>
+      `;
+      document.getElementById('app_ws').innerHTML = html;
+      evaluateAll(); // تقييم مباشر عند العرض
+    }
+
+    function evaluateValue(value, spec) {
+      value = value.toLowerCase().trim();
+      spec = spec.toLowerCase().trim();
+
+      // فحص القيم النصية (Complies, White, etc)
+      if (spec.includes("white") || spec.includes("complies") || spec.includes("conforms")) {
+          return value.includes("white") || value.includes("complies") || value.includes("conforms") || value.includes("passed");
+      }
+
+      // فحص الحدود الرقمية (NMT - Not More Than)
+      if (spec.includes("nmt")) {
+          let limit = parseFloat(spec.replace(/[^\d.]/g, ''));
+          let val = parseFloat(value.replace(/[^\d.]/g, ''));
+          return val <= limit;
+      }
+
+      // فحص النطاق (99.0% to 101.0%)
+      if (spec.includes("to")) {
+          let parts = spec.split("to").map(p => parseFloat(p.replace(/[^\d.]/g, '')));
+          let val = parseFloat(value.replace(/[^\d.]/g, ''));
+          return val >= parts[0] && val <= parts[1];
+      }
+
+      return true; // افتراضي PASS في حال لم يتم التعرف على الصيغة
+    }
+
+    function evaluateAll() {
+      let rows = document.querySelectorAll('.test-row');
+      let allPass = true;
+
+      rows.forEach(row => {
+        let spec = row.getAttribute('data-spec');
+        let res = row.querySelector('.res-input').value;
+        let statusCell = row.querySelector('.status-cell');
+        
+        let isPass = evaluateValue(res, spec);
+        
+        if (isPass) {
+          statusCell.innerHTML = '<span class="badge pass">PASS</span>';
+        } else {
+          statusCell.innerHTML = '<span class="badge fail">FAIL</span>';
+          allPass = false;
+        }
+      });
+
+      const overall = document.getElementById('overall_status');
+      if (allPass) {
+        overall.innerText = "النتيجة النهائية: مطابق للمواصفات (RELEASED)";
+        overall.className = "pill ok";
+      } else {
+        overall.innerText = "النتيجة النهائية: غير مطابق (REJECTED)";
+        overall.className = "pill bad";
+      }
+    }
+
+    window.onload = () => renderCOA('metro');
+  </script>
+</body>
+</html>

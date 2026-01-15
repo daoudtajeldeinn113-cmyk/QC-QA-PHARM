@@ -348,4 +348,211 @@
         }
     </script>
 </body>
+</html><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Pharma Management v5.3 | Dr. Daoud</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #10b981; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        aside { width: 280px; background: var(--primary); color: white; padding: 20px; display: flex; flex-direction: column; }
+        main { flex: 1; overflow-y: auto; padding: 30px; box-sizing: border-box; }
+        .card { background: white; border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 12px; font-weight: bold; color: #64748b; margin-bottom: 8px; }
+        select, input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: 0.3s; }
+        select:focus, input:focus { border-color: var(--accent); ring: 2px var(--accent); }
+        .btn-save { background: var(--accent); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; transition: 0.3s; }
+        .btn-save:hover { background: #059669; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #f1f5f9; padding: 15px; text-align: right; color: #475569; font-size: 12px; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .pass { background: #dcfce7; color: #166534; }
+        .oos { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div style="text-align: center; margin-bottom: 30px;">
+            <i data-lucide="microscope" style="width: 50px; height: 50px; color: var(--accent);"></i>
+            <h2 style="font-size: 18px; margin: 10px 0;">مختبر د. داود</h2>
+            <p style="font-size: 10px; color: #94a3b8;">Pharmaceutical QA/QC System</p>
+        </div>
+        <div style="flex: 1;">
+            <div style="padding: 15px; background: #1e293b; border-radius: 8px; margin-bottom: 10px; cursor: pointer;">
+                <i data-lucide="plus-square" style="vertical-align: middle; margin-left: 10px;"></i> إدخال بيانات تحليل
+            </div>
+        </div>
+    </aside>
+
+    <main>
+        <div class="card">
+            <h3 style="margin-top:0; border-bottom: 1px solid #eee; padding-bottom: 15px;"><i data-lucide="edit-3"></i> تسجيل تشغيلة جديدة</h3>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>نوع المادة</label>
+                    <select id="cat" onchange="updateProducts()">
+                        <option value="">-- اختر التصنيف --</option>
+                        <option value="RM">مواد فعالة (API)</option>
+                        <option value="EXC">مواد مسوغة (Excipients)</option>
+                        <option value="FP">منتج نهائي (Finished Product)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>اسم المادة / المنتج</label>
+                    <select id="prod" onchange="updateTests()"></select>
+                </div>
+                <div class="form-group">
+                    <label>رقم التشغيلة (Batch No.)</label>
+                    <input type="text" id="bn" placeholder="BN-2025-001">
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>تاريخ الإنتاج (Mfg Date)</label>
+                    <input type="date" id="mfgDate" onchange="autoCalcExpiry()">
+                </div>
+                <div class="form-group">
+                    <label>تاريخ الانتهاء (Exp Date)</label>
+                    <input type="date" id="expDate">
+                </div>
+                <div class="form-group">
+                    <label>المحلل المسئول</label>
+                    <input type="text" id="analyst" value="Dr. Daoud Tajeldeinn">
+                </div>
+            </div>
+
+            <div style="background: #f8fafc; padding: 20px; border-radius: 10px; border: 1px dashed #cbd5e1;">
+                <div class="form-grid" style="margin-bottom: 0;">
+                    <div class="form-group">
+                        <label>اختبار الجودة (Test)</label>
+                        <select id="test"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>النتيجة المقاسة (Result)</label>
+                        <input type="number" id="val" step="0.001" placeholder="0.000">
+                    </div>
+                    <div class="form-group" style="justify-content: flex-end;">
+                        <button class="btn-save" onclick="saveEntry()">اعتماد وحفظ بالسجل</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>سجل تحليلات المختبر</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>المنتج</th>
+                        <th>التشغيلة</th>
+                        <th>الاختبار</th>
+                        <th>النتيجة (الحدود)</th>
+                        <th>Mfg / Exp</th>
+                        <th>الحالة</th>
+                        <th>التقرير</th>
+                    </tr>
+                </thead>
+                <tbody id="logBody"></tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // قاعدة بيانات دقيقة بناءً على BP 2025
+        const db = {
+            "RM": {
+                "Paracetamol BP": [{t:"Assay", min:99.0, max:101.0}, {t:"LOD", min:0, max:0.5}],
+                "Aspirin BP": [{t:"Assay", min:99.5, max:101.0}],
+                "Diclofenac Potassium": [{t:"Assay", min:99.0, max:101.0}]
+            },
+            "EXC": {
+                "Magnesium Stearate": [{t:"Mg Content", min:4.0, max:5.0}, {t:"Acid Value", min:195, max:210}],
+                "Maize Starch": [{t:"pH", min:4.0, max:7.0}, {t:"LOD", min:0, max:15.0}]
+            },
+            "FP": {
+                "Aspirin 75mg Tab": [{t:"Assay", min:95.0, max:105.0}, {t:"Dissolution", min:70, max:100}],
+                "Ibuprofen 400mg Tab": [{t:"Hardness", min:80, max:150}, {t:"Disintegration", min:1, max:15}],
+                "Artemether/Lumefantrine": [{t:"Assay (Art)", min:90.0, max:110.0}]
+            }
+        };
+
+        function updateProducts() {
+            const cat = document.getElementById('cat').value;
+            const pSel = document.getElementById('prod');
+            pSel.innerHTML = '<option value="">-- اختر المنتج --</option>';
+            if(cat) {
+                Object.keys(db[cat]).forEach(p => pSel.add(new Option(p, p)));
+            }
+            updateTests();
+        }
+
+        function updateTests() {
+            const cat = document.getElementById('cat').value;
+            const prod = document.getElementById('prod').value;
+            const tSel = document.getElementById('test');
+            tSel.innerHTML = '';
+            if(prod) {
+                db[cat][prod].forEach((t, i) => tSel.add(new Option(`${t.t} (${t.min}-${t.max})`, i)));
+            }
+        }
+
+        function autoCalcExpiry() {
+            const mfg = new Date(document.getElementById('mfgDate').value);
+            if(!isNaN(mfg)) {
+                mfg.setFullYear(mfg.getFullYear() + 3); // افتراض 3 سنوات صلاحية
+                document.getElementById('expDate').value = mfg.toISOString().split('T')[0];
+            }
+        }
+
+        let logs = [];
+
+        function saveEntry() {
+            const cat = document.getElementById('cat').value;
+            const prod = document.getElementById('prod').value;
+            const tIdx = document.getElementById('test').value;
+            const val = parseFloat(document.getElementById('val').value);
+            const bn = document.getElementById('bn').value;
+            const mfg = document.getElementById('mfgDate').value;
+            const exp = document.getElementById('expDate').value;
+
+            if(!prod || !bn || isNaN(val)) return alert("يرجى ملء كافة الخانات الإلزامية");
+
+            const spec = db[cat][prod][tIdx];
+            const isPass = val >= spec.min && val <= spec.max;
+
+            const entry = {
+                prod, bn, test: spec.t, val, limit: `${spec.min}-${spec.max}`,
+                mfg, exp, status: isPass ? 'PASS' : 'OOS'
+            };
+
+            logs.unshift(entry);
+            renderTable();
+        }
+
+        function renderTable() {
+            document.getElementById('logBody').innerHTML = logs.map(l => `
+                <tr>
+                    <td><b>${l.prod}</b></td>
+                    <td>${l.bn}</td>
+                    <td>${l.test}</td>
+                    <td>${l.val} <br><small style="color:#94a3b8">(${l.limit})</small></td>
+                    <td><small>M: ${l.mfg}<br>E: ${l.exp}</small></td>
+                    <td><span class="status-badge ${l.status.toLowerCase()}">${l.status}</span></td>
+                    <td><button style="border:none; background:none; color:blue; cursor:pointer;" onclick="alert('توليد شهادة تحليل للتشغيلة ${l.bn}')">PDF</button></td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
 </html>

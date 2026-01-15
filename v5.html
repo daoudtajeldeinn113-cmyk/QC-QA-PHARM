@@ -163,4 +163,168 @@
 </script>
 
 </body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LIMS v10.3 | Full Pharma Suite</title>
+    <style>
+        body { font-family: 'Times New Roman', serif; margin: 0; background: #f4f7f6; }
+        .no-print { background: #1e293b; color: white; padding: 15px; position: sticky; top: 0; z-index: 100; display: flex; gap: 10px; align-items: center; }
+        
+        #coa-paper { width: 210mm; background: white; margin: 20px auto; padding: 40px; box-sizing: border-box; color: black; border: 1px solid #ccc; position: relative; }
+        .header-top { display: flex; justify-content: space-between; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 10px; }
+        .title-bar { text-align: center; border: 1.5px solid black; padding: 5px; font-weight: bold; font-size: 18px; margin-bottom: 20px; background: #f0f0f0; }
+        
+        .info-container { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
+        .info-table { width: 49%; border-collapse: collapse; font-size: 11px; }
+        .info-table td { border: 1px solid #000; padding: 4px 8px; }
+        .info-table td:first-child { background: #f9f9f9; font-weight: bold; width: 35%; }
+
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        .results-table th, .results-table td { border: 1px solid black; padding: 6px; text-align: left; }
+        .results-table th { background: #f0f0f0; }
+
+        .footer { margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; font-size: 11px; }
+        .sig-line { border-top: 1px solid black; margin: 30px 10px 5px 10px; padding-top: 5px; }
+
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            #coa-paper { border: none; margin: 0; width: 100%; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print">
+    <strong>LIMS v10.3 الشامل | </strong>
+    <select id="mode" onchange="switchMode()">
+        <option value="FP">Finished Product (Tablets/Capsules)</option>
+        <option value="RM">Raw Material (Powders/Excipients)</option>
+    </select>
+    <button onclick="window.print()" style="background: #10b981; color: white; border:none; padding: 5px 15px; cursor:pointer; border-radius:4px;">Print Certificate</button>
+</div>
+
+<div id="coa-paper">
+    <div class="header-top">
+        <div>
+            <h1 style="margin:0; font-size: 20px;">SCI Pharmaceutical Industry</h1>
+            <p style="margin:0; font-size: 11px;">Quality Control Laboratory - Khartoum, Sudan</p>
+        </div>
+        <div style="text-align: right; font-size: 11px;">
+            <strong>A.R. NO:</strong> <span contenteditable="true">FPP-25-073</span><br>
+            <strong>Date:</strong> <span contenteditable="true">27.09.2025</span>
+        </div>
+    </div>
+
+    <div class="title-bar" id="docTitle">CERTIFICATE OF ANALYSIS (COA)</div>
+
+    <div class="info-container">
+        <table class="info-table">
+            <tr><td>Product Name</td><td contenteditable="true">Aspruna 100 mg BP</td></tr>
+            <tr><td>Generic Name</td><td contenteditable="true">Aspirin</td></tr>
+            <tr><td>Manufacturer</td><td contenteditable="true">SCI Industries</td></tr>
+            <tr class="fp-only"><td>Strength</td><td contenteditable="true">100 mg</td></tr>
+            <tr class="rm-only" style="display:none;"><td>Date of Receipt</td><td contenteditable="true">09.07.2025</td></tr>
+        </table>
+        
+        <table class="info-table">
+            <tr><td>Batch Number</td><td contenteditable="true">TA01</td></tr>
+            <tr><td>Mfg. Date</td><td contenteditable="true">09.2025</td></tr>
+            <tr><td>Exp. Date</td><td contenteditable="true">08.2027</td></tr>
+            <tr class="fp-only"><td>Pack Size</td><td contenteditable="true">3 x 10 Tablets</td></tr>
+            <tr class="rm-only" style="display:none;"><td>Date of Re-analysis</td><td contenteditable="true">24.09.2025</td></tr>
+        </table>
+    </div>
+
+    <div style="font-weight:bold; font-size:14px; text-decoration: underline;">ANALYSIS RESULTS:</div>
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th>Test Parameter</th>
+                <th>Specification</th>
+                <th>Result</th>
+                <th>Comply</th>
+            </tr>
+        </thead>
+        <tbody id="testBody">
+            </tbody>
+    </table>
+
+    <div style="font-weight:bold; font-size:14px; margin-top:15px; text-decoration: underline;">MICROBIOLOGY:</div>
+    <table class="results-table">
+        <tbody id="microBody">
+            <tr><td width="35%">Total Aerobic Microbial Count</td><td>NMT 10³ CFU/g</td><td contenteditable="true">Absent</td><td>Yes</td></tr>
+            <tr><td>E. Coli & Salmonella</td><td>Absent</td><td contenteditable="true">Absent</td><td>Yes</td></tr>
+        </tbody>
+    </table>
+
+    <div style="margin-top:15px; border:1px solid black; padding:8px; font-size:12px;">
+        <strong>Conclusion:</strong> The sample analyzed complies with <strong>BP/USP</strong> specifications.
+    </div>
+
+    <div class="footer">
+        <div><div class="sig-line"></div><strong>Analyst</strong><br>Dr. Daoud Tajeldeinn</div>
+        <div><div class="sig-line"></div><strong>QC Manager</strong><br>Sign & Date</div>
+        <div><div class="sig-line"></div><strong>QA Manager</strong><br>Authorized Signatory</div>
+    </div>
+</div>
+
+<script>
+    const fpTests = [
+        ["Description", "White, round, uncoated tablets", "Comply", "Yes"],
+        ["Identification", "Conforms to IR Spectrum", "Conforms", "Yes"],
+        ["Uniformity of Weight", "Average weight ± 5%", "223.9 mg", "Yes"],
+        ["Hardness", "70 - 120 N", "95 N", "Yes"],
+        ["Thickness", "3.8 - 4.2 mm", "4.0 mm", "Yes"],
+        ["Friability", "NMT 1.0%", "0.12%", "Yes"],
+        ["Disintegration", "NMT 15 minutes", "4 min 20s", "Yes"],
+        ["Dissolution", "NLT 80% (Q) in 45 min", "92%", "Yes"],
+        ["Assay", "95.0% - 105.0%", "101.2%", "Yes"]
+    ];
+
+    const rmTests = [
+        ["Description", "White crystalline powder", "Comply", "Yes"],
+        ["Identification", "Conforms to IR Spectrum", "Conforms", "Yes"],
+        ["Solubility", "Soluble in ethanol", "Comply", "Yes"],
+        ["Melting Point", "168°C to 172°C", "170.5°C", "Yes"],
+        ["Loss on Drying", "Maximum 0.5%", "0.38%", "Yes"],
+        ["Sulfated Ash", "Maximum 0.1%", "0.04%", "Yes"],
+        ["Assay (Purity)", "99.0% - 101.0%", "99.8%", "Yes"]
+    ];
+
+    function switchMode() {
+        const mode = document.getElementById('mode').value;
+        const fpItems = document.querySelectorAll('.fp-only');
+        const rmItems = document.querySelectorAll('.rm-only');
+        const docTitle = document.getElementById('docTitle');
+
+        if(mode === 'FP') {
+            fpItems.forEach(el => el.style.display = 'table-row');
+            rmItems.forEach(el => el.style.display = 'none');
+            docTitle.innerText = "CERTIFICATE OF ANALYSIS (COA)";
+            renderTests(fpTests);
+        } else {
+            fpItems.forEach(el => el.style.display = 'none');
+            rmItems.forEach(el => el.style.display = 'table-row');
+            docTitle.innerText = "COA - RE-ANALYSIS REPORT";
+            renderTests(rmTests);
+        }
+    }
+
+    function renderTests(data) {
+        document.getElementById('testBody').innerHTML = data.map(row => `
+            <tr>
+                <td contenteditable="true">${row[0]}</td>
+                <td contenteditable="true">${row[1]}</td>
+                <td contenteditable="true">${row[2]}</td>
+                <td contenteditable="true">${row[3]}</td>
+            </tr>
+        `).join('');
+    }
+
+    window.onload = switchMode;
+</script>
+</body>
 </html>

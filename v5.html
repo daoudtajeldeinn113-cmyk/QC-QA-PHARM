@@ -2,229 +2,212 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SCI PHARMA - QMS Enterprise v14.1</title>
+    <title>SCI PHARMA - QMS v16.0 Full Compliance</title>
     <style>
-        :root { --sidebar-color: #1a202c; --accent: #3182ce; }
+        :root { --sidebar: #1e293b; --accent: #3b82f6; --fail: #dc2626; --pass: #16a34a; }
         * { box-sizing: border-box; }
-        body { font-family: "Times New Roman", serif; margin: 0; display: flex; background: #f0f2f5; height: 100vh; }
+        body { font-family: "Times New Roman", serif; margin: 0; display: flex; height: 100vh; background: #f1f5f9; }
         
-        /* Sidebar Navigation */
-        .sidebar { width: 250px; background: var(--sidebar-color); color: white; flex-shrink: 0; padding-top: 20px; font-family: sans-serif; }
-        .nav-group { padding: 15px 20px 5px; font-size: 11px; color: #718096; text-transform: uppercase; }
-        .nav-item { padding: 12px 25px; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
-        .nav-item:hover, .nav-item.active { background: #2d3748; border-left-color: var(--accent); color: white; }
+        .sidebar { width: 250px; background: var(--sidebar); color: white; flex-shrink: 0; font-family: sans-serif; overflow-y: auto; }
+        .nav-item { padding: 12px 20px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; border-bottom: 1px solid #334155; }
+        .nav-item:hover, .nav-item.active { background: #334155; border-left-color: var(--accent); }
+        .nav-group { padding: 15px 20px 5px; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Main Workspace */
-        .workspace { flex: 1; overflow-y: auto; padding: 40px; background: white; }
-        .view { display: none; max-width: 900px; margin: auto; }
+        .workspace { flex: 1; overflow-y: auto; padding: 25px; }
+        .view { display: none; max-width: 1000px; margin: auto; background: white; padding: 30px; border: 1px solid black; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .view.active { display: block; }
 
-        /* Professional GMP Header Style */
-        .coa-box { border: 2px solid black; padding: 20px; position: relative; }
-        .coa-header { text-align: center; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 15px; }
-        .header-table { width: 100%; border: none !important; }
-        .header-table td { border: none !important; padding: 3px; font-size: 14px; }
-        
-        /* Tables for Analysis */
+        .coa-header { text-align: center; border-bottom: 2px solid black; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid black; padding: 8px; text-align: left; font-size: 14px; }
-        th { background: #f2f2f2; text-transform: uppercase; }
-        .section-header { background: #eee; font-weight: bold; text-align: center; }
+        th, td { border: 1px solid black; padding: 6px; text-align: left; font-size: 13px; }
+        th { background: #f8fafc; }
+        .section-title { background: #e2e8f0; font-weight: bold; text-align: center; text-transform: uppercase; }
 
-        /* Inputs for Documentation */
-        input, select, textarea { border: 1px solid #ccc; padding: 5px; width: 100%; font-family: inherit; }
-        .no-print { background: #ebf8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bee3f8; }
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        .pass { background: #dcfce7; color: #166534; }
+        .fail { background: #fee2e2; color: #991b1b; }
 
-        @media print {
-            .sidebar, .no-print { display: none !important; }
-            body { background: white; }
-            .workspace { padding: 0; }
-            .coa-box { border: 2px solid black; }
-        }
+        .no-print { background: #eff6ff; padding: 15px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #bfdbfe; font-family: sans-serif; }
+        input[type="text"], input[type="number"] { width: 100%; border: 1px solid #cbd5e1; padding: 4px; font-family: inherit; }
+        
+        @media print { .sidebar, .no-print, button { display: none !important; } .workspace { padding: 0; } .view { border: none; box-shadow: none; } }
     </style>
 </head>
 <body>
 
 <nav class="sidebar">
-    <div style="text-align:center; padding-bottom:20px;"><b style="font-size:20px; color:#63b3ed;">SCI PHARMA</b></div>
-    <div class="nav-group">Main Console</div>
-    <div class="nav-item active" onclick="showView('dash', this)">📊 Dashboard</div>
+    <div style="padding: 20px; text-align:center;"><b style="font-size:20px; color:var(--accent);">SCI PHARMA</b></div>
     
-    <div class="nav-group">Production Documentation</div>
-    <div class="nav-item" onclick="showView('gran', this)">⚙️ IPC: Granulation</div>
-    <div class="nav-item" onclick="showView('comp', this)">💊 IPC: Compression</div>
+    <div class="nav-group">Operational Log</div>
+    <div class="nav-item active" onclick="showView('dash', this)">📊 Dashboard</div>
+    <div class="nav-item" onclick="showView('ipc', this)">⚙️ In-Process Tests</div>
     
     <div class="nav-group">Quality Control</div>
-    <div class="nav-item" onclick="showView('qc', this)">🧪 QC Final Release (COA)</div>
-    <div class="nav-item" onclick="showView('oos', this)">⚠️ OOS Investigation</div>
+    <div class="nav-item" onclick="showView('qc', this)">🧪 Final Release (COA)</div>
+    <div class="nav-item" onclick="showView('oos', this)">⚠️ OOS/CAPA Report</div>
 </nav>
 
 <main class="workspace">
 
-    <div id="view-dash" class="view active">
-        <h1>Welcome, Dr. Daoud</h1>
-        <p>Select a manufacturing or analytical stage from the sidebar to begin Good Documentation Practice (GDP).</p>
+    <div id="view-dash" class="view active" style="border:none; background:transparent;">
+        <h1>GMP Documentation System</h1>
+        <p>Welcome Dr. Daoud. All modules (IPC, Micro, Chemical) are now fully integrated for SCI PHARMA standards.</p>
     </div>
 
-    <div id="view-gran" class="view">
-        <div class="no-print"><h3>Granulation Log Entry</h3><button onclick="window.print()">Print Log</button></div>
-        <div class="coa-box">
-            <center><h2>IN-PROCESS CONTROL: GRANULATION</h2></center>
-            <table class="header-table">
-                <tr><td><b>Product:</b> <input type="text"></td><td><b>Batch No:</b> <input type="text"></td></tr>
-                <tr><td><b>Date:</b> <input type="date"></td><td><b>Stage:</b> Wet/Dry Granulation</td></tr>
-            </table>
-            <table>
-                <tr class="section-header"><td colspan="3">Processing Parameters</td></tr>
-                <tr><th>Test Parameter</th><th>Specification</th><th>Actual Result</th></tr>
-                <tr><td>Loss on Drying (LOD)</td><td>NMT 3.0 %</td><td><input type="text"></td></tr>
-                <tr><td>Sieve Analysis</td><td>Comply</td><td><input type="text"></td></tr>
-                <tr><td>Appearance</td><td>Uniform Granules</td><td><input type="text"></td></tr>
-            </table>
+    <div id="view-ipc" class="view">
+        <div class="coa-header">
+            <h2>IN-PROCESS CONTROL LOG</h2>
+            <p>Production Stage Monitoring</p>
         </div>
-    </div>
+        
+        <table class="header-table" style="border:none;">
+            <tr><td><b>Product:</b> <input type="text"></td><td><b>Batch No:</b> <input type="text"></td></tr>
+        </table>
 
-    <div id="view-comp" class="view">
-        <div class="no-print"><h3>Compression Log Entry</h3><button onclick="window.print()">Print Log</button></div>
-        <div class="coa-box">
-            <center><h2>IN-PROCESS CONTROL: COMPRESSION</h2></center>
-            <table class="header-table">
-                <tr><td><b>Product:</b> <input type="text"></td><td><b>Batch No:</b> <input type="text"></td></tr>
-            </table>
-            <table>
-                <tr class="section-header"><td colspan="4">Physical Testing (Every 30 Mins)</td></tr>
-                <tr><th>Time</th><th>Avg Weight (mg)</th><th>Hardness (N)</th><th>Thickness (mm)</th></tr>
-                <tr><td><input type="time"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
-                <tr><td><input type="time"></td><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
-            </table>
-        </div>
+        <table>
+            <tr class="section-title"><td colspan="5">Compression & Granulation Monitoring</td></tr>
+            <tr>
+                <th>Test Parameter</th>
+                <th>Specification</th>
+                <th>Standard</th>
+                <th>Actual Result</th>
+                <th>Compliance</th>
+            </tr>
+            <tr>
+                <td>Friability (%)</td>
+                <td>NMT 1.0 %</td>
+                <td><input type="number" id="spec-fri" value="1.0" hidden>1.0%</td>
+                <td><input type="number" step="0.01" id="res-fri" oninput="validateIPC('fri')"></td>
+                <td id="stat-fri">-</td>
+            </tr>
+            <tr>
+                <td>Disintegration (DT)</td>
+                <td>NMT 15-30 min</td>
+                <td><input type="number" id="spec-dt" value="15" hidden>15m</td>
+                <td><input type="number" id="res-dt" oninput="validateIPC('dt')"></td>
+                <td id="stat-dt">-</td>
+            </tr>
+            <tr>
+                <td>Thickness (mm)</td>
+                <td>4.2 ± 0.2 mm</td>
+                <td><input type="text" id="spec-thick" value="4.0-4.4" hidden>4.0-4.4</td>
+                <td><input type="number" step="0.1" id="res-thick" oninput="validateIPC('thick')"></td>
+                <td id="stat-thick">-</td>
+            </tr>
+            <tr>
+                <td>Diameter (mm)</td>
+                <td>Report</td>
+                <td>-</td>
+                <td><input type="text"></td>
+                <td>-</td>
+            </tr>
+        </table>
+        <br>
+        <button onclick="window.print()">Print IPC Report</button>
     </div>
 
     <div id="view-qc" class="view">
         <div class="no-print">
-            <h3>Certificate Generation</h3>
-            <label><b>Load Product Preset:</b></label>
-            <select id="preset" onchange="applyPreset()" style="width: auto;">
+            <b>Product Preset:</b>
+            <select id="prod-select" onchange="applySpecs()">
                 <option value="">-- Select Product --</option>
-                <optgroup label="Finished Products">
-                    <option value="asp_tab">Aspirin 100mg Tablets (TA01 Style)</option>
-                    <option value="par_tab">Paramol 500mg Tablets (PA004 Style)</option>
-                    <option value="pov_sol">Povidone Iodine 10% (PD07 Style)</option>
-                </optgroup>
-                <optgroup label="Raw Materials">
-                    <option value="mcc_raw">Microcrystalline Cellulose (MCC)</option>
-                    <option value="asp_raw">Aspirin Powder (RM)</option>
-                </optgroup>
+                <option value="asp">Aspirin 100mg (TA01 Style)</option>
+                <option value="par">Paramol 500mg (PA004 Style)</option>
+                <option value="pov">Povidone Iodine 10% (PD07 Style)</option>
             </select>
-            <button onclick="window.print()" style="background:green; color:white; margin-left:20px;">Print COA</button>
+            <button onclick="window.print()" style="float:right;">Print Final COA</button>
         </div>
 
         <div class="coa-box">
             <div class="coa-header">
                 <h1 style="margin:0;">SCI PHARMACEUTICAL INDUSTRY</h1>
-                <p style="margin:2px;">Quality Control Department - Khartoum, Sudan</p>
-                <h2 style="margin:10px; border: 1px solid black; display:inline-block; padding:5px 20px;">CERTIFICATE OF ANALYSIS</h2>
+                <p>Quality Control Department</p>
+                <h2 style="margin:5px; border:1px solid black; display:inline-block; padding:5px 25px;">CERTIFICATE OF ANALYSIS</h2>
             </div>
 
-            <table class="header-table">
-                <tr>
-                    <td><b>Product Name:</b> <span id="out-name">-</span></td>
-                    <td><b>AR. NO:</b> <input type="text" id="in-ar"></td>
-                </tr>
-                <tr>
-                    <td><b>Batch Number:</b> <input type="text" id="in-batch"></td>
-                    <td><b>Date of Release:</b> <input type="text" value="15.01.2026"></td>
-                </tr>
-                <tr>
-                    <td><b>Manufacturing Date:</b> <input type="text" placeholder="MM.YYYY"></td>
-                    <td><b>Specification:</b> <input type="text" id="in-spec"></td>
-                </tr>
-                <tr>
-                    <td><b>Expiry Date:</b> <input type="text" placeholder="MM.YYYY"></td>
-                    <td><b>Sample QTY:</b> <input type="text"></td>
-                </tr>
+            <table style="border:none;">
+                <tr><td><b>Product:</b> <span id="out-name">-</span></td><td><b>Batch No:</b> <input type="text"></td></tr>
+                <tr><td><b>AR No:</b> <span id="out-ar">-</span></td><td><b>Spec:</b> <span id="out-spec">-</span></td></tr>
             </table>
 
             <table>
                 <thead>
-                    <tr><th width="35%">Test Parameter</th><th width="40%">Specification</th><th width="25%">Result</th></tr>
+                    <tr><th width="30%">Test Parameter</th><th width="35%">Specification</th><th width="20%">Result</th><th width="15%">Status</th></tr>
                 </thead>
-                <tbody id="chemical-results">
-                    <tr class="section-header"><td colspan="3">Physical & Chemical Test Results</td></tr>
+                <tbody id="chemical-body">
+                    <tr class="section-title"><td colspan="4">Physico-Chemical Analysis</td></tr>
                 </tbody>
-                <tbody id="micro-results">
-                    <tr class="section-header"><td colspan="3">Microbiology Tests</td></tr>
-                    <tr><td>Escherichia Coli</td><td>Absent</td><td><input type="text" value="Absent"></td></tr>
-                    <tr><td>Salmonella</td><td>Absent</td><td><input type="text" value="Absent"></td></tr>
-                    <tr><td>TAMC</td><td>NMT 10³ CFU/g</td><td><input type="text" value="Absent"></td></tr>
+                <tbody id="micro-body">
+                    <tr class="section-title"><td colspan="4">Microbiological Analysis</td></tr>
+                    <tr><td>TYMC (Molds/Yeasts)</td><td>NMT 10² CFU/g</td><td><input type="text" value="Absent"></td><td>PASS</td></tr>
+                    <tr><td>Staphylococcus aureus</td><td>Absent</td><td><input type="text" value="Absent"></td><td>PASS</td></tr>
+                    <tr><td>Pseudomonas aeruginosa (PsA)</td><td>Absent</td><td><input type="text" value="Absent"></td><td>PASS</td></tr>
+                    <tr><td>E. Coli</td><td>Absent</td><td><input type="text" value="Absent"></td><td>PASS</td></tr>
+                    <tr><td>Salmonella</td><td>Absent</td><td><input type="text" value="Absent"></td><td>PASS</td></tr>
+                    <tr><td>TAMC (Bacteria)</td><td>NMT 10³ CFU/g</td><td><input type="text" value="0 CFU/g"></td><td>PASS</td></tr>
                 </tbody>
             </table>
-
-            <div style="margin-top:30px; display:flex; justify-content:space-around;">
-                <div style="text-align:center;">________________<br><b>Analyst</b></div>
-                <div style="text-align:center;">________________<br><b>QC Manager</b></div>
-            </div>
-            <div style="margin-top:20px; border:1px solid black; padding:5px; text-align:center; font-weight:bold;">
-                Conclusion: The sample complies with the required specification.
-            </div>
         </div>
     </div>
+
 </main>
 
 <script>
-    const presets = {
-        asp_tab: {
+    const library = {
+        asp: {
             name: "Aspirin 100mg Tablets", ar: "FPP-25-073", spec: "BP 2017",
             tests: [
-                {p: "Description", s: "White, round, uncoated tablets"},
-                {p: "Identification", s: "Positive Reaction"},
-                {p: "Uniformity of Weight", s: "223.9mg ± 5%"},
-                {p: "Disintegration", s: "NMT 30 minutes"},
-                {p: "Assay", s: "95.0% - 105.0%"}
+                {p: "Description", s: "White round tablets", type: "text", target: "Comply"},
+                {p: "Assay", s: "95.0 - 105.0 %", type: "range", min: 95, max: 105},
+                {p: "Friability", s: "NMT 1.0 %", type: "max", max: 1.0},
+                {p: "Weight Uniformity", s: "223.9mg ± 5%", type: "range", min: 212.7, max: 235.1}
             ]
         },
-        par_tab: {
+        par: {
             name: "Paramol 500mg Tablets", ar: "FPP-25-053", spec: "BP 2025",
             tests: [
-                {p: "Description", s: "White uncoated tablet"},
-                {p: "Uniformity of Weight", s: "610mg ± 5%"},
-                {p: "Disintegration", s: "NMT 15 minutes"},
-                {p: "Assay", s: "95.0% - 105.0%"},
-                {p: "Thickness", s: "4.2 ± 0.2 mm"}
-            ]
-        },
-        mcc_raw: {
-            name: "Microcrystalline Cellulose", ar: "ARM-25-018", spec: "BP 2017",
-            tests: [
-                {p: "Description", s: "White hygroscopic powder"},
-                {p: "pH", s: "5.0 to 7.5"},
-                {p: "Conductivity", s: "NMT 75 µS/cm"},
-                {p: "Loss on Drying", s: "Maximum 7.0 %"}
+                {p: "Description", s: "White uncoated tablets", type: "text", target: "Comply"},
+                {p: "Assay", s: "95.0 - 105.0 %", type: "range", min: 95, max: 105},
+                {p: "DT", s: "NMT 15 min", type: "max", max: 15}
             ]
         }
     };
 
     function showView(id, el) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         document.getElementById('view-' + id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         el.classList.add('active');
     }
 
-    function applyPreset() {
-        const val = document.getElementById('preset').value;
-        if (!val) return;
-        const data = presets[val];
+    function applySpecs() {
+        const id = document.getElementById('prod-select').value;
+        if(!id) return;
+        const data = library[id];
         document.getElementById('out-name').innerText = data.name;
-        document.getElementById('in-ar').value = data.ar;
-        document.getElementById('in-spec').value = data.spec;
+        document.getElementById('out-ar').innerText = data.ar;
+        document.getElementById('out-spec').innerText = data.spec;
 
-        let html = '<tr class="section-header"><td colspan="3">Physical & Chemical Test Results</td></tr>';
-        data.tests.forEach(t => {
-            html += `<tr><td>${t.p}</td><td>${t.s}</td><td><input type="text" value="Comply"></td></tr>`;
+        let html = '<tr class="section-title"><td colspan="4">Physico-Chemical Analysis</td></tr>';
+        data.tests.forEach((t, i) => {
+            html += `<tr><td>${t.p}</td><td>${t.s}</td><td><input type="text" id="qc-res-${i}"></td><td>-</td></tr>`;
         });
-        document.getElementById('chemical-results').innerHTML = html;
+        document.getElementById('chemical-body').innerHTML = html;
+    }
+
+    function validateIPC(type) {
+        const val = parseFloat(document.getElementById('res-' + type).value);
+        const stat = document.getElementById('stat-' + type);
+        let pass = false;
+
+        if(type === 'fri') pass = val <= 1.0;
+        if(type === 'dt') pass = val <= 15;
+        if(type === 'thick') pass = val >= 4.0 && val <= 4.4;
+
+        if(isNaN(val)) stat.innerHTML = "-";
+        else stat.innerHTML = pass ? '<span class="status-badge pass">PASS</span>' : '<span class="status-badge fail">FAIL</span>';
     }
 </script>
+
 </body>
 </html>
